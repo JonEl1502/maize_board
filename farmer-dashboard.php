@@ -136,6 +136,47 @@ $result = $query->get_result();
             });
     }
 
+    // 🚀 Handle Form Submission for Adding a New Post
+    document.getElementById("addPostForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        let formData = new FormData(this);
+        fetch("add_post.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json()) // ✅ Expect JSON response
+        .then(result => {
+            if (result.status === 200) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Post Added!",
+                    text: result.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    document.getElementById("addPostForm").reset();
+                    loadMaizeListings(JSON.parse(localStorage.getItem("user")).id);
+                    document.querySelector("#addPostModal .btn-close").click(); // Close modal
+                });
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: result.message
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error adding post:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Failed to add maize listing. Please try again.",
+            });
+        });
+    });
+
     function logout() {
         localStorage.removeItem("user");
         window.location.href = "logout.php";

@@ -37,22 +37,23 @@
     </div>
 </div>
 
-<!-- Approve Modal -->
+<!-- Approve/Reject Modal -->
 <div class="modal fade" id="approveModal">
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="approveForm">
                 <div class="modal-header">
-                    <h5 class="modal-title">Approve Listing</h5>
+                    <h5 class="modal-title">Approve or Reject Listing</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="listing_id" id="listingId">
+                    <input type="hidden" name="maize_id" id="listingId">
                     <label>Approval Comments</label>
                     <textarea class="form-control" name="comments" id="approvalComments" required></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Approve</button>
+                    <button type="button" class="btn btn-danger" onclick="submitApproval('reject')">Reject</button>
+                    <button type="button" class="btn btn-success" onclick="submitApproval('approve')">Approve</button>
                 </div>
             </form>
         </div>
@@ -121,7 +122,7 @@
                                 <p><strong>Status:</strong> ${maize.status.charAt(0).toUpperCase() + maize.status.slice(1)}</p>
                                 ${maize.status === 'pending' ? `
                                     <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#approveModal" 
-                                        onclick="setApproveData(${maize.id})">Approve</button>` 
+                                        onclick="setApproveData(${maize.id})">Approve/Reject</button>` 
                                 : ""}
                             </div>
                         </div>
@@ -133,6 +134,39 @@
 
     function setApproveData(listingId) {
         document.getElementById("listingId").value = listingId;
+    }
+
+    function submitApproval(action) {
+        let formData = new FormData(document.getElementById("approveForm"));
+        formData.append("action", action);
+        formData.append("board_member_id", JSON.parse(localStorage.getItem("user")).id);
+
+        fetch("approve_listing.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 200) {
+                Swal.fire({
+                    icon: "success",
+                    title: action === "approve" ? "Approved!" : "Rejected!",
+                    text: result.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    loadListings();
+                    document.querySelector("#approveModal .btn-close").click();
+                });
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: result.message
+                });
+            }
+        })
+        .catch(error => console.error("Error approving listing:", error));
     }
 
     function logout() {

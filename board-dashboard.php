@@ -114,6 +114,7 @@
                 }
 
                 data.forEach(maize => {
+                    console.log(JSON.stringify(maize));
                     listingsContainer.innerHTML += `
                         <div class="col-md-4 mb-3">
                             <div class="card p-3">

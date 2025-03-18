@@ -30,7 +30,7 @@
             <form id="loginForm">
                 <div class="mb-3">
                     <label class="form-label">Username</label>
-                    <input type="text" class="form-control" name="username" id="username" required>
+                    <input type="text" class="form-control" name="email" id="username" required>
                 </div>
                 <div class="mb-4">
                     <label class="form-label">Password</label>
@@ -54,56 +54,63 @@
         let formData = new FormData(this);
         let jsonData = Object.fromEntries(formData.entries());
 
-        let response = await fetch("login_process.php", {
-            method: "POST",
-            body: new URLSearchParams(jsonData),
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
-        });
-
-        let result = await response.json();
-
-        if (result.status === 200) {
-            // Save user data in localStorage
-            localStorage.setItem("user", JSON.stringify(result.user));
-
-            // Console log user details
-            console.log("User Logged In:", result.user);
-
-            Swal.fire({
-                icon: "success",
-                title: "Success!",
-                text: result.message,
-                timer: 2000,
-                showConfirmButton: false
-            }).then(() => {
-                // Redirect based on role
-                window.location.href = result.user.role === "farmer" ? "farmer-dashboard.php" : "board-dashboard.php";
+        try {
+            let response = await fetch(`${window.location.origin}/maizemarket/backend/login_process.php`, {
+                method: "POST",
+                body: new URLSearchParams(jsonData),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
             });
-        } else {
+
+            let result = await response.json();
+            console.log("Logged in result:", result);
+
+            if (result.status === 200) {
+                // Save user data in localStorage
+                localStorage.setItem("user", JSON.stringify(result.user));
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Success!",
+                    text: result.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    // Redirect based on role
+                    const redirectPage = result.user.role === 1 ? "farmer-dashboard.php" : "board-dashboard.php";
+                    window.location.href = `${window.location.origin}/maizemarket/frontend/${redirectPage}`;
+                });
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Login Failed",
+                    text: result.message
+                });
+            }
+        } catch (error) {
+            console.error("Login Error:", error);
             Swal.fire({
                 icon: "error",
-                title: "Login Failed",
-                text: result.message
+                title: "Error",
+                text: "Something went wrong. Please try again."
             });
         }
     });
 
-    // ✅ FIX: Only redirect if NOT already on the correct page
+    // ✅ Check if user is already logged in and redirect
     const loggedInUser = localStorage.getItem("user");
     if (loggedInUser) {
         const userData = JSON.parse(loggedInUser);
         console.log("User already logged in:", userData);
-        console.log("User already logged in:", userData.role);
 
         const currentPage = window.location.pathname;
-        const farmerPage = "/maizemarket/farmer-dashboard.php";
-        const boardPage = "/maizemarket/board-dashboard.php";
+        const farmerPage = "/maizemarket/frontend/farmer-dashboard.php";
+        const boardPage = "/maizemarket/frontend/board-dashboard.php";
 
-        if ((userData.role === "farmer" && currentPage !== farmerPage) ||
-            (userData.role === "boardMember" && currentPage !== boardPage)) {
+        if ((userData.role === 1 && currentPage !== farmerPage) ||
+            (userData.role === 1 && currentPage !== boardPage)) {
             setTimeout(() => {
-                console.log("Page to: ", userData.role === "farmer" ? farmerPage : boardPage);
-                window.location.href = userData.role === "farmer" ? farmerPage : boardPage;
+                console.log("Redirecting to:", userData.role === 1 ? farmerPage : boardPage);
+                window.location.href = userData.role === 1 ? farmerPage : boardPage;
             }, 1000);
         }
     }

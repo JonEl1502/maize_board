@@ -1,18 +1,11 @@
-<?php
-include 'config.php';
-
-// 🚀 Fetch all maize listings (later filtered by JS)
-$query = $conn->prepare("SELECT * FROM maize_listings");
-$query->execute();
-$result = $query->get_result();
-?>
+<?php include 'config.php'; ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Farmer Dashboard</title>
+    <title>Board Member Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -28,45 +21,39 @@ $result = $query->get_result();
 </nav>
 
 <div class="container mt-5">
-    <h3 class="mb-4">Your Maize Listings</h3>
+    <h3 class="mb-4">Maize Listings</h3>
     
-    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addPostModal">+ Add Post</button>
+    <!-- 🚀 Status Filter Dropdown -->
+    <label for="statusFilter"><strong>Filter by Status:</strong></label>
+    <select id="statusFilter" class="form-select w-25 mb-4" onchange="loadListings()">
+        <option value="pending" selected>Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="">All</option>
+    </select>
 
     <div class="row" id="maizeListings">
-        <!-- 🚀 Maize Listings Will Load Here Dynamically -->
+        <!-- 🚀 Listings Will Load Here Dynamically -->
     </div>
 </div>
 
-<!-- Add Post Modal -->
-<div class="modal fade" id="addPostModal" tabindex="-1">
+<!-- Approve/Reject Modal -->
+<div class="modal fade" id="approveModal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="addPostForm">
+            <form id="approveForm">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Maize Listing</h5>
+                    <h5 class="modal-title">Approve or Reject Listing</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" name="farmer_id" id="farmerId">
-                    <div class="mb-3">
-                        <label>Quantity (kg)</label>
-                        <input type="number" class="form-control" name="quantity" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Quality</label>
-                        <select class="form-control" name="quality" required>
-                            <option value="Low">Low</option>
-                            <option value="Medium">Medium</option>
-                            <option value="High">High</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label>Price per kg ($)</label>
-                        <input type="number" class="form-control" name="price_per_unit" required>
-                    </div>
+                    <input type="hidden" name="maize_id" id="listingId">
+                    <label>Approval Comments</label>
+                    <textarea class="form-control" name="comments" id="approvalComments" required></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Add Post</button>
+                    <button type="button" class="btn btn-danger" onclick="submitApproval('reject')">Reject</button>
+                    <button type="button" class="btn btn-success" onclick="submitApproval('approve')">Approve</button>
                 </div>
             </form>
         </div>
@@ -82,11 +69,24 @@ $result = $query->get_result();
             const userData = JSON.parse(user);
             console.log("Loaded User from localStorage:", userData);
 
-            document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.username} - Farmer`;
-            document.getElementById("farmerId").value = userData.id;
+            if (userData.role !== 2 || userData.role !== 3) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Access Denied",
+                    text: "You are not authorized to access this page!",
+                    timer: 3000,
+                    showConfirmButton: false
+                }).then(() => {
+                    localStorage.setItem("user", null);
+                    window.location.href = "login.php";
+                });
+                return;
+            }
 
-            // 🚀 Load Maize Listings for This Farmer
-            loadMaizeListings(userData.id);
+            document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.username} - Board Member`;
+
+            // 🚀 Load Maize Listings
+            loadListings();
         } else {
             console.warn("No user found in localStorage, redirecting to login.");
             Swal.fire({
@@ -101,63 +101,64 @@ $result = $query->get_result();
         }
     }
 
-    function loadMaizeListings(farmerId) {
-        fetch(`fetch_f_maize_listings.php?farmer_id=${farmerId}`) // ✅ Pass farmer_id in URL
+    function loadListings() {
+        const status = document.getElementById("statusFilter").value; // Get selected status
+        fetch(`${window.location.origin}/maizemarket/backend/fetch_bm_maize_listings.php?status=${status}`)
             .then(response => response.json())
             .then(data => {
                 const listingsContainer = document.getElementById("maizeListings");
                 listingsContainer.innerHTML = "";
 
                 if (data.length === 0) {
-                    listingsContainer.innerHTML = `<p class="text-center">No maize listings found.</p>`;
+                    listingsContainer.innerHTML = `<p class="text-center">No maize listings found for the selected status.</p>`;
                     return;
                 }
 
                 data.forEach(maize => {
+                    console.log(JSON.stringify(maize));
                     listingsContainer.innerHTML += `
                         <div class="col-md-4 mb-3">
                             <div class="card p-3">
                                 <h5>${maize.quantity} kg - ${maize.quality}</h5>
                                 <p><strong>Price:</strong> $${maize.price_per_unit}/kg</p>
                                 <p><strong>Status:</strong> ${maize.status.charAt(0).toUpperCase() + maize.status.slice(1)}</p>
-                                <p><strong>Listed On:</strong> ${maize.listing_date}</p>
+                                ${maize.status === 'pending' ? `
+                                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#approveModal" 
+                                        onclick="setApproveData(${maize.id})">Approve/Reject</button>` 
+                                : ""}
                             </div>
                         </div>
                     `;
                 });
             })
-            .catch(error => {
-                console.error("Error loading maize listings:", error);
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: "Failed to load maize listings. Please try again.",
-                });
-            });
+            .catch(error => console.error("Error loading maize listings:", error));
     }
 
-    // 🚀 Handle Form Submission for Adding a New Post
-    document.getElementById("addPostForm").addEventListener("submit", function(e) {
-        e.preventDefault();
+    function setApproveData(listingId) {
+        document.getElementById("listingId").value = listingId;
+    }
 
-        let formData = new FormData(this);
-        fetch("add_post.php", {
+    function submitApproval(action) {
+        let formData = new FormData(document.getElementById("approveForm"));
+        formData.append("action", action);
+        formData.append("board_member_id", JSON.parse(localStorage.getItem("user")).id);
+
+        fetch("${window.location.origin}/maizemarket/backend/approve_listing.php", {
             method: "POST",
             body: formData
         })
-        .then(response => response.json()) // ✅ Expect JSON response
+        .then(response => response.json())
         .then(result => {
             if (result.status === 200) {
                 Swal.fire({
                     icon: "success",
-                    title: "Post Added!",
+                    title: action === "approve" ? "Approved!" : "Rejected!",
                     text: result.message,
                     timer: 2000,
                     showConfirmButton: false
                 }).then(() => {
-                    document.getElementById("addPostForm").reset();
-                    loadMaizeListings(JSON.parse(localStorage.getItem("user")).id);
-                    document.querySelector("#addPostModal .btn-close").click(); // Close modal
+                    loadListings();
+                    document.querySelector("#approveModal .btn-close").click();
                 });
             } else {
                 Swal.fire({
@@ -167,15 +168,8 @@ $result = $query->get_result();
                 });
             }
         })
-        .catch(error => {
-            console.error("Error adding post:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "Failed to add maize listing. Please try again.",
-            });
-        });
-    });
+        .catch(error => console.error("Error approving listing:", error));
+    }
 
     function logout() {
         localStorage.removeItem("user");

@@ -118,8 +118,8 @@ include 'config.php';
                         <div class="mb-3">
                             <label>Need Transport?</label>
                             <select class="form-control" name="need_transport" id="editNeedTransport">
-                                <option value="1">Yes</option>
-                                <option value="0">No</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
                             </select>
                         </div>
                     </div>
@@ -216,6 +216,8 @@ include 'config.php';
                         </div>
                     </div>
                 `;
+
+            console.log(`Editing #:${maize.id}, '${maize.quantity}', '${maize.quantity_unit_id}',`);
                     });
                 })
                 .catch(error => {
@@ -230,9 +232,8 @@ include 'config.php';
             document.getElementById("editQuantityUnitId").value = quantityUnitId;
             document.getElementById("editPricePerUnit").value = pricePerUnit;
             document.getElementById("editLocation").value = location;
-
             // Ensure the correct transport option is selected
-            document.getElementById("editNeedTransport").value = needTransport === "Yes" ? "1" : "0";
+            document.getElementById("editNeedTransport").value = needTransport;
 
             // Debugging log to verify values
             console.log("Editing Listing:", { id, quantity, quantityUnitId, pricePerUnit, location, needTransport });

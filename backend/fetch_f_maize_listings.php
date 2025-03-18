@@ -15,7 +15,10 @@ if ($farmerId <= 0) {
 }
 
 // Prepare SQL query
-$query = $conn->prepare("SELECT * FROM maize_listings m join quantity_units q on m.quantity_unit_id = q.id  WHERE farmer_id = ?");
+$query = $conn->prepare("SELECT m.id, m.quantity, m.price_per_unit, m.location, m.need_transport, m.quantity_unit_id, q.unit_name, m.status, m.listing_date 
+                                FROM maize_listings m 
+                                JOIN quantity_units q ON m.quantity_unit_id = q.id 
+                                WHERE m.farmer_id = ?");
 if (!$query) {
     echo json_encode(["status" => 500, "message" => "SQL Prepare Error: " . $conn->error]);
     exit();

@@ -47,36 +47,26 @@ include 'config.php';
                         <input type="hidden" name="farmer_id" id="farmerId">
                         <input type="hidden" name="status" value="pending">
                         <input type="hidden" name="approved_by" value="">
-
-
                         <div class="row">
                             <div class="col-md-6">
                                 <label>Quantity</label>
                                 <input type="number" class="form-control" name="quantity" required>
                             </div>
-
                             <div class="col-md-6">
                                 <label>Quantity Unit</label>
                                 <select class="form-select" name="quantity_unit_id" id="quantity_unit_id" required>
                                     <option value="">Loading...</option>
                                 </select>
                             </div>
-
-                            <div class="mb-3">
-
-                            </div>
                         </div>
-
                         <div class="mb-3">
                             <label>Price per unit ($)</label>
                             <input type="number" class="form-control" name="price_per_unit" required>
                         </div>
-
                         <div class="mb-3">
                             <label>Location</label>
                             <input type="text" class="form-control" name="location" required>
                         </div>
-
                         <div class="mb-3">
                             <label>Need Transport?</label>
                             <select class="form-control" name="need_transport">
@@ -93,9 +83,58 @@ include 'config.php';
         </div>
     </div>
 
+    <!-- Edit Post Modal -->
+    <div class="modal fade" id="editPostModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editPostForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Maize Listing</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="editListingId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label>Quantity</label>
+                                <input type="number" class="form-control" name="quantity" id="editQuantity" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label>Quantity Unit</label>
+                                <select class="form-select" name="quantity_unit_id" id="editQuantityUnitId" required>
+                                    <option value="">Loading...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label>Price per unit ($)</label>
+                            <input type="number" class="form-control" name="price_per_unit" id="editPricePerUnit"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Location</label>
+                            <input type="text" class="form-control" name="location" id="editLocation" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Need Transport?</label>
+                            <select class="form-control" name="need_transport" id="editNeedTransport">
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Update Listing</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", async function () {
             let farmerTypeSelect = document.getElementById("quantity_unit_id");
+            let editQuantityUnitSelect = document.getElementById("editQuantityUnitId");
 
             try {
                 let response = await fetch(`${window.location.origin}/maizemarket/backend/quantity_units.php`);
@@ -103,17 +142,20 @@ include 'config.php';
 
                 if (data.status === 200) {
                     farmerTypeSelect.innerHTML = '<option value="">Select Quantity Unit</option>';
+                    editQuantityUnitSelect.innerHTML = '<option value="">Select Quantity Unit</option>';
                     data.quantity_units.forEach(type => {
                         farmerTypeSelect.innerHTML += `<option value="${type.id}">${type.unit_name}</option>`;
+                        editQuantityUnitSelect.innerHTML += `<option value="${type.id}">${type.unit_name}</option>`;
                     });
                 } else {
                     farmerTypeSelect.innerHTML = '<option value="">Error loading types</option>';
+                    editQuantityUnitSelect.innerHTML = '<option value="">Error loading types</option>';
                 }
             } catch (error) {
                 farmerTypeSelect.innerHTML = '<option value="">Error fetching data</option>';
+                editQuantityUnitSelect.innerHTML = '<option value="">Error fetching data</option>';
             }
         });
-
 
         function loadUser() {
             const user = localStorage.getItem("user");
@@ -142,7 +184,6 @@ include 'config.php';
                 .then(data => {
                     console.log("API Response:", data); // ✅ Debugging line
 
-                    // Check if data is an array before using forEach
                     if (!Array.isArray(data.data)) {
                         console.error("Unexpected API Response:", data);
                         Swal.fire({ icon: "error", title: "Error", text: "Failed to load listings. Try again!" });
@@ -161,13 +202,17 @@ include 'config.php';
                         listingsContainer.innerHTML += `
                     <div class="col-md-4 mb-3">
                         <div class="card p-3">
-                            <h5>${maize.quantity} - ${maize.unit_name}</h5><p><strong>Moisture:</strong> ${maize.moisture_percentage !== null && maize.moisture_percentage !== undefined ? maize.moisture_percentage + "%" : "n/a"}</p>
+                             <h5>${maize.quantity} - ${maize.unit_name}</h5>
+                            <p><strong>Moisture:</strong> ${maize.moisture_percentage !== null && maize.moisture_percentage !== undefined ? maize.moisture_percentage + "%" : "n/a"}</p>
                             <p><strong>Aflatoxin:</strong> ${maize.aflatoxin_level !== null && maize.aflatoxin_level !== undefined ? maize.aflatoxin_level + " ppb" : "n/a"}</p>
                             <p><strong>Price:</strong> Kes. ${maize.price_per_unit} / ${maize.unit_name}</p>
                             <p><strong>Location:</strong> ${maize.location}</p>
-                            <p><strong>Need Transport:</strong> ${maize.need_transport ? 'Yes' : 'No'}</p>
+                            <p><strong>Need Transport:</strong> ${maize.need_transport}</p>
                             <p><strong>Status:</strong> ${maize.status}</p>
                             <p><strong>Listed On:</strong> ${maize.listing_date}</p>
+                            <button class="btn btn-primary" 
+                                onclick="openEditModal(${maize.id}, '${maize.quantity}', '${maize.quantity_unit_id}', '${maize.price_per_unit}', '${maize.location}', '${maize.need_transport}')">
+                            Edit </button>
                         </div>
                     </div>
                 `;
@@ -178,6 +223,53 @@ include 'config.php';
                     Swal.fire({ icon: "error", title: "Error", text: "Failed to load maize listings." });
                 });
         }
+
+        function openEditModal(id, quantity, quantityUnitId, pricePerUnit, location, needTransport) {
+            document.getElementById("editListingId").value = id;
+            document.getElementById("editQuantity").value = quantity;
+            document.getElementById("editQuantityUnitId").value = quantityUnitId;
+            document.getElementById("editPricePerUnit").value = pricePerUnit;
+            document.getElementById("editLocation").value = location;
+
+            // Ensure the correct transport option is selected
+            document.getElementById("editNeedTransport").value = needTransport === "Yes" ? "1" : "0";
+
+            // Debugging log to verify values
+            console.log("Editing Listing:", { id, quantity, quantityUnitId, pricePerUnit, location, needTransport });
+
+            let modal = new bootstrap.Modal(document.getElementById("editPostModal"));
+            modal.show();
+        }
+
+        document.getElementById("editPostForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            let formData = new FormData(this);
+
+            // Debugging output to ensure correct id
+            let formDataObject = {};
+            formData.forEach((value, key) => {
+                formDataObject[key] = value;
+            });
+
+            console.log("Update Form Data:", formDataObject);
+
+            fetch(`${window.location.origin}/maizemarket/backend/update_post.php`, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 200) {
+                    Swal.fire({ icon: "success", title: "Post Updated!", text: result.message });
+                    loadMaizeListings(JSON.parse(localStorage.getItem("user")).id);
+                    document.getElementById("editPostForm").reset();
+                    document.querySelector("#editPostModal .btn-close").click();
+                } else {
+                    Swal.fire({ icon: "error", title: "Error", text: result.message });
+                }
+            })
+            .catch(error => console.error("Update Error:", error));
+        });
 
         document.getElementById("addPostForm").addEventListener("submit", function (e) {
             e.preventDefault();

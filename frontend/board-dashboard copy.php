@@ -69,7 +69,7 @@
             const userData = JSON.parse(user);
             console.log("Loaded User from localStorage:", userData);
 
-            if (userData.role === 1) {
+            if (userData.role !== 2 || userData.role !== 3) {
                 Swal.fire({
                     icon: "error",
                     title: "Access Denied",
@@ -83,7 +83,7 @@
                 return;
             }
 
-            document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.name} - Board Member`;
+            document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.username} - Board Member`;
 
             // 🚀 Load Maize Listings
             loadListings();
@@ -104,35 +104,24 @@
     function loadListings() {
         const status = document.getElementById("statusFilter").value; // Get selected status
         fetch(`${window.location.origin}/maizemarket/backend/fetch_bm_maize_listings.php?status=${status}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log(`WOWOWO :${JSON.stringify(data)}`);
                 const listingsContainer = document.getElementById("maizeListings");
                 listingsContainer.innerHTML = "";
-                let data1 = data.data;
-                console.log(`WOWOWO 1 :${JSON.stringify(data1)}`);
 
-                if (!Array.isArray(data1) || data1.length === 0) {
+                if (data.length === 0) {
                     listingsContainer.innerHTML = `<p class="text-center">No maize listings found for the selected status.</p>`;
                     return;
                 }
 
-                data1.forEach(maize => {
+                data.forEach(maize => {
                     console.log(JSON.stringify(maize));
                     listingsContainer.innerHTML += `
                         <div class="col-md-4 mb-3">
                             <div class="card p-3">
-                                <h5>${maize.quantity} ${maize.unit_name}</h5>
-                                <p><strong>Price per Unit:</strong> Kes. ${maize.price_per_unit}</p>
-                                <p><strong>Location:</strong> ${maize.location}</p>
-                                <p><strong>Need Transport:</strong> ${maize.need_transport}</p>
+                                <h5>${maize.quantity} kg - ${maize.quality}</h5>
+                                <p><strong>Price:</strong> $${maize.price_per_unit}/kg</p>
                                 <p><strong>Status:</strong> ${maize.status.charAt(0).toUpperCase() + maize.status.slice(1)}</p>
-                                <p><strong>Farmer:</strong> ${maize.farmer_name}</p>
-                                <p><strong>Email:</strong> ${maize.farmer_email}</p>
-                                <p><strong>Phone:</strong> ${maize.farmer_phone}</p>
                                 ${maize.status === 'pending' ? `
                                     <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#approveModal" 
                                         onclick="setApproveData(${maize.id})">Approve/Reject</button>` 
@@ -154,7 +143,7 @@
         formData.append("action", action);
         formData.append("board_member_id", JSON.parse(localStorage.getItem("user")).id);
 
-        fetch(`${window.location.origin}/maizemarket/backend/approve_listing.php`, {
+        fetch("${window.location.origin}/maizemarket/backend/approve_listing.php", {
             method: "POST",
             body: formData
         })
@@ -184,7 +173,7 @@
 
     function logout() {
         localStorage.removeItem("user");
-        window.location.href = `${window.location.origin}/maizemarket/frontend/login.php`;
+        window.location.href = "logout.php";
     }
 
     window.onload = loadUser;

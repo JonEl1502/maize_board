@@ -11,11 +11,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $password = trim($_POST['password'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
     $address = trim($_POST['address'] ?? '');
-    $profile_id = 1; // Default profile ID for farmers
     $farmer_type_id = trim($_POST['farmer_type_id'] ?? '');
     $created_at = date('Y-m-d H:i:s');
 
-    if (empty($name) || empty($email) || empty($password) || empty($phone) || empty($address) || empty($farmer_type_id)) {
+    if (empty($name) || empty($email) || empty($password) || empty($phone) || empty($address)) {
         echo json_encode(["status" => 400, "message" => "All fields are required."]);
         exit();
     }
@@ -43,17 +42,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         exit();
     }
 
-    // Insert new user (with profile_id)
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password, phone, address, profile_id, farmer_type_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    // Insert new user
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password, phone, address, created_at) VALUES (?, ?, ?, ?, ?, ?)");
     if (!$stmt) {
         echo json_encode(["status" => 500, "message" => "Prepare failed: " . $conn->error]);
         exit();
     }
 
-    // 🛠 Fixed bind_param() to match the table structure
-    $stmt->bind_param("sssssiis", $name, $email, $hashedPassword, $phone, $address, $profile_id, $farmer_type_id, $created_at);
+    $stmt->bind_param("ssssss", $name, $email, $hashedPassword, $phone, $address, $created_at);
 
     if ($stmt->execute()) {
+        $user_id = $stmt->insert_id; // Get the inserted user ID
+
+        // Insert into farmers table
+        $farmerStmt = $conn->prepare("INSERT INTO farmers (user_id, farmer_type_id) VALUES (?, ?)");
+        if (!$farmerStmt) {
+            echo json_encode(["status" => 500, "message" => "Prepare failed: " . $conn->error]);
+            exit();
+        }
+        $farmerStmt->bind_param("ii", $user_id, $farmer_type_id);
+        $farmerStmt->execute();
+
         echo json_encode(["status" => 200, "message" => "Registration successful! Redirecting to login..."]);
     } else {
         echo json_encode(["status" => 500, "message" => "Database error: " . $conn->error]);

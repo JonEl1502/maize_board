@@ -15,11 +15,14 @@ if (empty($status)) {
 }
 
 // Prepare SQL query
-$query = $conn->prepare("SELECT m.id, m.quantity, m.price_per_unit, m.location, m.need_transport, m.quantity_unit_id, q.unit_name, m.status, m.listing_date, 
-                                u.id as farmer_id, u.name as farmer_name, u.email as farmer_email, u.phone as farmer_phone 
+$query = $conn->prepare("SELECT m.id, m.quantity, m.price_per_unit, ifnull(m.moisture_percentage, 'N/A') as moisture_percentage,
+                                IFNULL(m.aflatoxin_level, 'N/A') AS aflatoxin_level, c.name as county, m.location, m.need_transport, 
+                                m.quantity_unit_id, q.unit_name, m.status, m.listing_date, u.id as farmer_id, 
+                                u.name as farmer_name, u.email as farmer_email, u.phone as farmer_phone 
                                 FROM maize_listings m 
                                 JOIN quantity_units q ON m.quantity_unit_id = q.id 
                                 JOIN users u ON m.farmer_id = u.id 
+                                JOIN counties c ON m.county_id = c.id 
                                 WHERE m.status = ?");
 if (!$query) {
     echo json_encode(["status" => 500, "message" => "SQL Prepare Error: " . $conn->error]);

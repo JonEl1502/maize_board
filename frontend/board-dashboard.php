@@ -48,6 +48,13 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="maize_id" id="listingId">
+                    
+                    <label>Moisture Percentage</label>
+                    <input type="number" class="form-control" name="moisture_percentage" id="moisturePercentage" required>
+
+                    <label>Aflatoxin Level</label>
+                    <input type="number" class="form-control" name="aflatoxin_level" id="aflatoxinLevel" required>
+
                     <label>Approval Comments</label>
                     <textarea class="form-control" name="comments" id="approvalComments" required></textarea>
                 </div>
@@ -153,6 +160,8 @@
         let formData = new FormData(document.getElementById("approveForm"));
         formData.append("action", action);
         formData.append("board_member_id", JSON.parse(localStorage.getItem("user")).id);
+        formData.append("moisture_percentage", document.getElementById("moisturePercentage").value);
+        formData.append("aflatoxin_level", document.getElementById("aflatoxinLevel").value);
 
         fetch(`${window.location.origin}/maizemarket/backend/approve_listing.php`, {
             method: "POST",

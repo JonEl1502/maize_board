@@ -63,15 +63,26 @@ include 'config.php';
                             <label>Price per unit ($)</label>
                             <input type="number" class="form-control" name="price_per_unit" required>
                         </div>
-                        <div class="mb-3">
-                            <label>Location</label>
-                            <input type="text" class="form-control" name="location" required>
+
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label>Counties</label>
+                                <select class="form-select" name="county_id" id="counties" required>
+                                    <option value="">Loading...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label>Location</label>
+                                <input type="text" class="form-control"  name="location" id="location" required>
+                            </div>
                         </div>
+
                         <div class="mb-3">
                             <label>Need Transport?</label>
                             <select class="form-control" name="need_transport">
-                                <option value="1">Yes</option>
-                                <option value="0">No</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
                             </select>
                         </div>
                     </div>
@@ -111,10 +122,20 @@ include 'config.php';
                             <input type="number" class="form-control" name="price_per_unit" id="editPricePerUnit"
                                 required>
                         </div>
-                        <div class="mb-3">
-                            <label>Location</label>
-                            <input type="text" class="form-control" name="location" id="editLocation" required>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label>County</label>
+                                <select class="form-select" name="county_id" id="editCountyId" required>
+                                    <option value="">Loading...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label>Location</label>
+                                <input type="text" class="form-control" name="location" id="editLocation" required>
+                            </div>
                         </div>
+
                         <div class="mb-3">
                             <label>Need Transport?</label>
                             <select class="form-control" name="need_transport" id="editNeedTransport">
@@ -132,6 +153,27 @@ include 'config.php';
     </div>
 
     <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            let countryTypeSelect = document.getElementById("counties");
+            let editCountySelect = document.getElementById("editCountyId");
+
+            try {
+                let response = await fetch(`${window.location.origin}/maizemarket/backend/get_counties.php`);
+                let data = await response.json();
+
+                if (data.status === 200) {
+                    countryTypeSelect.innerHTML = '<option value="">Select Counties</option>';
+                    data.counties.forEach(type => {
+                        countryTypeSelect.innerHTML += `<option value="${type.id}">${type.name}</option>`;
+                    });
+                } else {
+                    countryTypeSelect.innerHTML = '<option value="">Error loading types</option>';
+                }
+            } catch (error) {
+                countryTypeSelect.innerHTML = '<option value="">Error fetching data</option>';
+            }
+        });
+
         document.addEventListener("DOMContentLoaded", async function () {
             let farmerTypeSelect = document.getElementById("quantity_unit_id");
             let editQuantityUnitSelect = document.getElementById("editQuantityUnitId");
@@ -211,13 +253,13 @@ include 'config.php';
                             <p><strong>Status:</strong> ${maize.status}</p>
                             <p><strong>Listed On:</strong> ${maize.listing_date}</p>
                             <button class="btn btn-primary" 
-                                onclick="openEditModal(${maize.id}, '${maize.quantity}', '${maize.quantity_unit_id}', '${maize.price_per_unit}', '${maize.location}', '${maize.need_transport}')">
+                                onclick="openEditModal(${maize.id}, '${maize.quantity}', '${maize.quantity_unit_id}', '${maize.price_per_unit}', '${maize.county_id}', '${maize.location}', '${maize.need_transport}')">
                             Edit </button>
                         </div>
                     </div>
                 `;
 
-            console.log(`Editing #:${maize.id}, '${maize.quantity}', '${maize.quantity_unit_id}',`);
+                        console.log(`Editing #:${maize.id}, '${maize.quantity}', '${maize.quantity_unit_id}',`);
                     });
                 })
                 .catch(error => {
@@ -226,11 +268,12 @@ include 'config.php';
                 });
         }
 
-        function openEditModal(id, quantity, quantityUnitId, pricePerUnit, location, needTransport) {
+        function openEditModal(id, quantity, quantityUnitId, pricePerUnit, countyId, location, needTransport) {
             document.getElementById("editListingId").value = id;
             document.getElementById("editQuantity").value = quantity;
             document.getElementById("editQuantityUnitId").value = quantityUnitId;
             document.getElementById("editPricePerUnit").value = pricePerUnit;
+            document.getElementById("editCountyId").value = countyId;
             document.getElementById("editLocation").value = location;
             // Ensure the correct transport option is selected
             document.getElementById("editNeedTransport").value = needTransport;
@@ -258,23 +301,24 @@ include 'config.php';
                 method: "POST",
                 body: formData
             })
-            .then(response => response.json())
-            .then(result => {
-                if (result.status === 200) {
-                    Swal.fire({ icon: "success", title: "Post Updated!", text: result.message });
-                    loadMaizeListings(JSON.parse(localStorage.getItem("user")).id);
-                    document.getElementById("editPostForm").reset();
-                    document.querySelector("#editPostModal .btn-close").click();
-                } else {
-                    Swal.fire({ icon: "error", title: "Error", text: result.message });
-                }
-            })
-            .catch(error => console.error("Update Error:", error));
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 200) {
+                        Swal.fire({ icon: "success", title: "Post Updated!", text: result.message });
+                        loadMaizeListings(JSON.parse(localStorage.getItem("user")).id);
+                        document.getElementById("editPostForm").reset();
+                        document.querySelector("#editPostModal .btn-close").click();
+                    } else {
+                        Swal.fire({ icon: "error", title: "Error", text: result.message });
+                    }
+                })
+                .catch(error => console.error("Update Error:", error));
         });
 
         document.getElementById("addPostForm").addEventListener("submit", function (e) {
             e.preventDefault();
             let formData = new FormData(this);
+            console.log("Add Post Form Data:", Object.fromEntries(formData.entries()));
             fetch(`${window.location.origin}/maizemarket/backend/add_post.php`, { method: "POST", body: formData })
                 .then(response => response.json())
                 .then(result => {

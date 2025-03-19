@@ -11,6 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $password = trim($_POST['password'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
     $address = trim($_POST['address'] ?? '');
+    $profile_id = 1; // Default profile ID for farmers
     $farmer_type_id = trim($_POST['farmer_type_id'] ?? '');
     $created_at = date('Y-m-d H:i:s');
 
@@ -43,13 +44,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     // Insert new user
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password, phone, address, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password, phone, address, profile_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
     if (!$stmt) {
         echo json_encode(["status" => 500, "message" => "Prepare failed: " . $conn->error]);
         exit();
     }
 
-    $stmt->bind_param("ssssss", $name, $email, $hashedPassword, $phone, $address, $created_at);
+    $stmt->bind_param("sssssis", $name, $email, $hashedPassword, $phone, $address, $profile_id, $created_at);
 
     if ($stmt->execute()) {
         $user_id = $stmt->insert_id; // Get the inserted user ID

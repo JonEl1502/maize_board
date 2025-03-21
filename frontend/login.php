@@ -76,8 +76,8 @@
                     showConfirmButton: false
                 }).then(() => {
                     // Redirect based on role
-                    const redirectPage = result.user.role === 1 ? "farmer-dashboard.php" : "board-dashboard.php";
-                    window.location.href = `${window.location.origin}/maizemarket/frontend/${redirectPage}`;
+                    // const redirectPage = result.user.role === 1 ? "farmer-dashboard.php" : "board-dashboard.php";
+                    window.location.href = `${window.location.origin}/maizemarket/frontend/home.php`;
                 });
             } else {
                 Swal.fire({
@@ -105,12 +105,15 @@
         const currentPage = window.location.pathname;
         const farmerPage = "/maizemarket/frontend/farmer-dashboard.php";
         const boardPage = "/maizemarket/frontend/board-dashboard.php";
+        const homePage = "/maizemarket/frontend/home.php";
 
         if ((userData.role === 1 && currentPage !== farmerPage) ||
             (userData.role === 1 && currentPage !== boardPage)) {
             setTimeout(() => {
                 console.log("Redirecting to:", userData.role === 1 ? farmerPage : boardPage);
-                window.location.href = userData.role === 1 ? farmerPage : boardPage;
+                // window.location.href = userData.role === 1 ? farmerPage : boardPage;
+                window.location.href = homePage;
+                
             }, 1000);
         }
     }

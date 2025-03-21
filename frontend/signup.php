@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,10 +12,11 @@
             max-width: 500px;
             margin: 5rem auto;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
+
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
         <div class="container">
@@ -37,7 +39,8 @@
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Password</label>
-                        <input type="password" class="form-control" name="password" id="password" minlength="6" required>
+                        <input type="password" class="form-control" name="password" id="password" minlength="6"
+                            required>
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Phone</label>
@@ -48,8 +51,8 @@
                         <textarea class="form-control" name="address" id="address" rows="2" required></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Farmer Type</label>
-                        <select class="form-select" name="farmer_type_id" id="farmer_type_id" required>
+                        <label class="form-label">Role</label>
+                        <select class="form-select" name="role" id="role" required>
                             <option value="">Loading...</option>
                         </select>
                     </div>
@@ -64,26 +67,27 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", async function () {
-            let farmerTypeSelect = document.getElementById("farmer_type_id");
+            let selectedRole = document.getElementById("role");
 
             try {
-                let response = await fetch(`${window.location.origin}/maizemarket/backend/get_farmer_types.php`);
+                let response = await fetch(`${window.location.origin}/maizemarket/backend/get_roles.php`);
                 let data = await response.json();
 
                 if (data.status === 200) {
-                    farmerTypeSelect.innerHTML = '<option value="">Select Farmer Type</option>';
-                    data.farmer_types.forEach(type => {
-                        farmerTypeSelect.innerHTML += `<option value="${type.id}">${type.type_name}</option>`;
+                    selectedRole.innerHTML = '<option value="">Select Role</option>';
+                    data.roles.forEach(role => {  // Use `roles`, not `farmer_types`
+                        if (role.name === "Admin") return;  // Skip Admin role
+                        selectedRole.innerHTML += `<option value="${role.id}">${role.name}</option>`;
                     });
                 } else {
-                    farmerTypeSelect.innerHTML = '<option value="">Error loading types</option>';
+                    selectedRole.innerHTML = '<option value="">Error loading roles</option>';
                 }
             } catch (error) {
-                farmerTypeSelect.innerHTML = '<option value="">Error fetching data</option>';
+                selectedRole.innerHTML = '<option value="">Error fetching data</option>';
             }
         });
 
-        document.getElementById("registerForm").addEventListener("submit", async function(e) {
+        document.getElementById("registerForm").addEventListener("submit", async function (e) {
             e.preventDefault();
             let formData = new FormData(this);
             let jsonData = Object.fromEntries(formData.entries());
@@ -95,9 +99,9 @@
             });
 
             let resultText = await response.text();  // Get the raw response
-        console.log("Raw response:", resultText); // Log raw response for debugging
+            console.log("Raw response:", resultText); // Log raw response for debugging
 
-        let result = JSON.parse(resultText);  // Try to parse JSON
+            let result = JSON.parse(resultText);  // Try to parse JSON
 
 
             // let result = await response.json();
@@ -121,4 +125,5 @@
         });
     </script>
 </body>
+
 </html>

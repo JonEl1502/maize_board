@@ -10,6 +10,7 @@ include 'header.php'; // Ensure the header is included ?>
     <title>Product Listings</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
@@ -33,6 +34,12 @@ include 'header.php'; // Ensure the header is included ?>
                         <label for="filterName" class="form-label">Product Name</label>
                         <input type="text" class="form-control" id="filterName" name="filterName"
                             placeholder="Search by name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="filterProduct" class="form-label">Product</label>
+                        <select class="form-select" id="filterProduct" name="filterProduct">
+                            <option value="">All Products</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="filterCategory" class="form-label">Category</label>
@@ -62,14 +69,34 @@ include 'header.php'; // Ensure the header is included ?>
         </div>
     </div>
 
+    <!-- Seller Details Modal -->
+    <div class="modal fade" id="sellerModal" tabindex="-1" aria-labelledby="sellerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sellerModalLabel">Seller Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Name:</strong> <span id="sellerName"></span></p>
+                    <p><strong>Email:</strong> <span id="sellerEmail"></span></p>
+                    <p><strong>Phone:</strong> <span id="sellerPhone"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS & Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             loadUser();
-            // loadDropdowns();
             loadCategories();
+            loadProducts(); // Load products for filtering
         });
 
         function loadUser() {
@@ -107,15 +134,28 @@ include 'header.php'; // Ensure the header is included ?>
                 });
         }
 
+        // Load products into filter dropdown
+        function loadProducts() {
+            fetch(`${window.location.origin}/maizemarket/backend/get_products.php`)
+                .then(response => response.json())
+                .then(data => {
+                    let productDropdown = document.getElementById("filterProduct");
+                    data.products.forEach(product => {
+                        productDropdown.innerHTML += `<option value="${product.id}">${product.name}</option>`;
+                    });
+                });
+        }
+
         // Handle filter form submission
         document.getElementById("filterForm").addEventListener("submit", function (e) {
             e.preventDefault();
             const filterName = document.getElementById("filterName").value.trim();
+            const filterProduct = document.getElementById("filterProduct").value;
             const filterCategory = document.getElementById("filterCategory").value;
             const filterPriceMin = document.getElementById("filterPriceMin").value;
             const filterPriceMax = document.getElementById("filterPriceMax").value;
 
-            loadProductListings(null, null, { filterName, filterCategory, filterPriceMin, filterPriceMax });
+            loadProductListings(null, null, { filterName, filterProduct, filterCategory, filterPriceMin, filterPriceMax });
         });
 
         function loadProductListings(userId, roleId, filters = {}) {
@@ -123,17 +163,10 @@ include 'header.php'; // Ensure the header is included ?>
 
             let params = new URLSearchParams();
             if (filters.filterName) params.append("filterName", filters.filterName);
+            if (filters.filterProduct) params.append("product_id", filters.filterProduct);
             if (filters.filterCategory) params.append("category_id", filters.filterCategory);
             if (filters.filterPriceMin) params.append("min_price", filters.filterPriceMin);
             if (filters.filterPriceMax) params.append("max_price", filters.filterPriceMax);
-
-            // if ([3, 4].includes(roleId)) {
-            //     params.append("role_id", 2);
-            // } else if ([4, 5].includes(roleId)) {
-            //     params.append("role_id", "3,4");
-            // } else if (roleId) {
-            //     params.append("role_id", roleId);
-            // }
 
             if (userId) params.append("user_id", userId);
 
@@ -156,18 +189,15 @@ include 'header.php'; // Ensure the header is included ?>
                             listingsContainer.innerHTML += `
                             <div class="col-md-4 mb-3">
                                 <div class="card shadow-sm">
-                                    <img src="${row.product_image_url || 'https://www.istockphoto.com/photos/farm-produce'}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Product Image">
                                     <div class="card-body">
                                         <h5 class="card-title">${row.product_name}</h5>
-                                        <p><strong>Category:</strong> ${row.category_name}</p>
                                         <p><strong>Quantity:</strong> ${row.quantity} ${row.unit_name}</p>
                                         <p><strong>Price:</strong> Ksh ${parseFloat(row.price_per_quantity).toFixed(2)} per ${row.unit_name}</p>
-                                        <p><strong>Seller:</strong> ${row.user_name} (${row.user_email}, ${row.user_phone})</p>
                                         <button class="btn btn-primary btn-sm" onclick="buyProduct(${row.id})">
                                             Buy Now
                                         </button>
-                                        <button class="btn btn-info btn-sm mt-2" onclick="viewSellerDetails(${row.user_id}, '${row.user_name}', '${row.user_email}', '${row.user_phone}')">
-                                            View Seller Details
+                                        <button class="btn btn-info btn-sm mt-2" onclick="openSellerModal('${row.user_name}', '${row.user_email}', '${row.user_phone}')">
+                                            <i class="fas fa-eye"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -191,14 +221,13 @@ include 'header.php'; // Ensure the header is included ?>
             // Implement the purchase functionality
         }
 
-        function viewSellerDetails(userId, userName, userEmail, userPhone) {
-            Swal.fire({
-                title: `Seller Details`,
-                html: `<p><strong>Name:</strong> ${userName}</p>
-                       <p><strong>Email:</strong> ${userEmail}</p>
-                       <p><strong>Phone:</strong> ${userPhone}</p>`,
-                icon: "info"
-            });
+        function openSellerModal(name, email, phone) {
+            document.getElementById("sellerName").innerText = name;
+            document.getElementById("sellerEmail").innerText = email;
+            document.getElementById("sellerPhone").innerText = phone;
+
+            let sellerModal = new bootstrap.Modal(document.getElementById("sellerModal"));
+            sellerModal.show();
         }
 
         function logout() {

@@ -29,6 +29,7 @@ $query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.pr
           JOIN products p ON pl.product_id = p.id
           JOIN categories c ON p.category_id = c.id
           JOIN quantity_types qt ON pl.quantity_type_id = qt.id
+          JOIN statuses s ON pl.status_id = s.id
           JOIN users u ON pl.user_id = u.id
           WHERE 1=1";
 

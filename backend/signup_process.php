@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $password = trim($_POST['password'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
     $address = trim($_POST['address'] ?? '');
-    $role_id = 1; // Default role ID for farmers
+    $role_id = trim(trim($_POST['role'] ?? 1));
     $created_at = date('Y-m-d H:i:s');
 
     if (empty($name) || empty($email) || empty($password) || empty($phone) || empty($address)) {

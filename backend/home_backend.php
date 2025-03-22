@@ -9,22 +9,95 @@ ini_set('display_errors', 1);
 $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : null;
 $role_id = isset($_GET['role_id']) ? intval($_GET['role_id']) : null;
 
+// Get additional filters from query parameters
+$product_id = isset($_GET['product_id']) ? intval($_GET['product_id']) : null;
+$category_id = isset($_GET['category_id']) ? intval($_GET['category_id']) : null;
+$min_price = isset($_GET['min_price']) ? floatval($_GET['min_price']) : null;
+$max_price = isset($_GET['max_price']) ? floatval($_GET['max_price']) : null;
+$price_per_quantity = isset($_GET['price_per_quantity']) ? floatval($_GET['price_per_quantity']) : null;
+$quantity = isset($_GET['quantity']) ? intval($_GET['quantity']) : null;
+$quantity_type_id = isset($_GET['quantity_type_id']) ? intval($_GET['quantity_type_id']) : null;
+
+$params = [];
+$types = "";
+
+// Base query
+$query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.price_per_quantity, pl.product_image_url,
+                 u.id AS user_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone, 
+                 p.category_id, c.name AS category_name
+          FROM product_listings pl
+          JOIN products p ON pl.product_id = p.id
+          JOIN categories c ON p.category_id = c.id
+          JOIN quantity_types qt ON pl.quantity_type_id = qt.id
+          JOIN users u ON pl.user_id = u.id
+          WHERE 1=1";
+
+// Apply filters based on role_id and user_id
 if ($role_id === 2 && $user_id) {
-    // If the user is a farmer, show only their product listings
-    $query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.price_per_quantity, pl.product_image_url 
-              FROM product_listings pl
-              JOIN products p ON pl.product_id = p.id
-              JOIN quantity_types qt ON pl.quantity_type_id = qt.id
-              WHERE pl.user_id = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $user_id);
-} else {
-    // Show all product listings for other roles
-    $query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.price_per_quantity, pl.product_image_url 
-              FROM product_listings pl
-              JOIN products p ON pl.product_id = p.id
-              JOIN quantity_types qt ON pl.quantity_type_id = qt.id";
-    $stmt = $conn->prepare($query);
+    $query .= " AND pl.user_id = ?";
+    $params[] = $user_id;
+    $types .= "i";
+} elseif ($role_id !== null) {
+    $query .= " AND u.role_id = ?";
+    $params[] = $role_id;
+    $types .= "i";
+}
+
+// Apply additional filters
+if ($product_id !== null) {
+    $query .= " AND pl.product_id = ?";
+    $params[] = $product_id;
+    $types .= "i";
+}
+
+if ($category_id !== null) {
+    $query .= " AND p.category_id = ?";
+    $params[] = $category_id;
+    $types .= "i";
+}
+
+if ($min_price !== null) {
+    $query .= " AND pl.price_per_quantity >= ?";
+    $params[] = $min_price;
+    $types .= "d";
+}
+
+if ($max_price !== null) {
+    $query .= " AND pl.price_per_quantity <= ?";
+    $params[] = $max_price;
+    $types .= "d";
+}
+
+if ($price_per_quantity !== null) {
+    $query .= " AND pl.price_per_quantity = ?";
+    $params[] = $price_per_quantity;
+    $types .= "d";
+}
+
+if ($quantity !== null) {
+    $query .= " AND pl.quantity = ?";
+    $params[] = $quantity;
+    $types .= "i";
+}
+
+if ($quantity_type_id !== null) {
+    $query .= " AND pl.quantity_type_id = ?";
+    $params[] = $quantity_type_id;
+    $types .= "i";
+}
+
+$product_name = isset($_GET['filterName']) ? trim($_GET['filterName']) : null;
+
+if ($product_name !== null) {
+    $query .= " AND p.name LIKE ?";
+    $params[] = "%" . $product_name . "%";
+    $types .= "s";
+}
+
+// Prepare statement
+$stmt = $conn->prepare($query);
+if ($types) {
+    $stmt->bind_param($types, ...$params);
 }
 
 // Validate query execution

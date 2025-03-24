@@ -5,8 +5,8 @@ header('Content-Type: application/json');
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Get user_id and role_id from query parameters
-$user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : null;
+// Get seller_id and role_id from query parameters
+$seller_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : null;
 $role_id = isset($_GET['role_id']) ? intval($_GET['role_id']) : null;
 
 // Get additional filters from query parameters
@@ -23,20 +23,20 @@ $types = "";
 
 // Base query
 $query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.price_per_quantity, pl.product_image_url,
-                 u.id AS user_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone, 
-                 p.category_id, c.name AS category_name
+                 u.id AS seller_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone, pl.status_id,
+                 s.name AS status_name, pl.created_at, pl.updated_at, p.category_id, c.name AS category_name
           FROM product_listings pl
           JOIN products p ON pl.product_id = p.id
           JOIN categories c ON p.category_id = c.id
           JOIN quantity_types qt ON pl.quantity_type_id = qt.id
           JOIN statuses s ON pl.status_id = s.id
-          JOIN users u ON pl.user_id = u.id
+          JOIN users u ON pl.seller_id = u.id
           WHERE 1=1";
 
-// Apply filters based on role_id and user_id
-if ($role_id === 2 && $user_id) {
-    $query .= " AND pl.user_id = ?";
-    $params[] = $user_id;
+// Apply filters based on role_id and seller_id
+if ($role_id === 2 && $seller_id) {
+    $query .= " AND pl.seller_id = ?";
+    $params[] = $seller_id;
     $types .= "i";
 } elseif ($role_id !== null) {
     $query .= " AND u.role_id = ?";

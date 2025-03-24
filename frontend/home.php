@@ -11,6 +11,8 @@ include 'header.php'; // Ensure the header is included ?>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Include SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -84,6 +86,31 @@ include 'header.php'; // Ensure the header is included ?>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buy Confirmation Modal -->
+    <div class="modal fade" id="buyModal" tabindex="-1" aria-labelledby="buyModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="buyModalLabel">Confirm Purchase</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Product:</strong> <span id="buyProductName"></span></p>
+                    <p><strong>Price:</strong> Ksh <span id="buyProductPrice"></span> per <span
+                            id="buyProductUnit"></span></p>
+                    <div class="mb-3">
+                        <label for="mpesaCode" class="form-label">Enter Mpesa Code</label>
+                        <input type="text" class="form-control" id="mpesaCode" placeholder="e.g., MPESA123456">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="confirmPurchase()">Confirm & Pay</button>
                 </div>
             </div>
         </div>
@@ -183,7 +210,7 @@ include 'header.php'; // Ensure the header is included ?>
 
                     listingsContainer.innerHTML = "";
                     let data = response.data;
-                    console.log("Product Listings:", JSON.stringify(data));
+                    // console.log("Product Listings:", JSON.stringify(data));
                     if (data.length > 0) {
                         data.forEach(row => {
                             listingsContainer.innerHTML += `
@@ -193,8 +220,10 @@ include 'header.php'; // Ensure the header is included ?>
                                         <h5 class="card-title">${row.product_name}</h5>
                                         <p><strong>Quantity:</strong> ${row.quantity} ${row.unit_name}</p>
                                         <p><strong>Price:</strong> Ksh ${parseFloat(row.price_per_quantity).toFixed(2)} per ${row.unit_name}</p>
-                                        <button class="btn btn-primary btn-sm" onclick="buyProduct(${row.id})">
-                                            Buy Now
+                                        <button class="btn ${row.status_id === 1 ? 'btn-primary' : 'btn-secondary'} btn-sm" 
+                                                onclick="${row.status_id === 1 ? `openBuyModal(${row.id}, '${row.seller_id}', '${row.product_name}', '${row.price_per_quantity}', '${row.unit_name}')` : ''}" 
+                                                ${row.status_id !== 1 ? 'disabled' : ''}>
+                                            ${row.status_id === 1 ? 'Buy Now' : row.status_name}
                                         </button>
                                         <button class="btn btn-info btn-sm mt-2" onclick="openSellerModal('${row.user_name}', '${row.user_email}', '${row.user_phone}')">
                                             <i class="fas fa-eye"></i>
@@ -216,8 +245,70 @@ include 'header.php'; // Ensure the header is included ?>
                 });
         }
 
-        function buyProduct(productId) {
-            alert("Redirecting to purchase page for product ID: " + productId);
+        function openBuyModal(id, sellerId, productName, price, unit) {
+            document.getElementById("buyProductName").innerText = productName;
+            document.getElementById("buyProductPrice").innerText = price;
+            document.getElementById("buyProductUnit").innerText = unit;
+            document.getElementById("mpesaCode").value = ""; // Clear previous input
+            console.log("Clicked Buy Now for Listing ID:", id, "Seller ID:", sellerId); // Debugging log
+            document.getElementById("mpesaCode").setAttribute("data-listing-id", id); // Store listing ID
+            document.getElementById("mpesaCode").setAttribute("data-seller-id", sellerId); // Store seller ID
+
+            let buyModal = new bootstrap.Modal(document.getElementById("buyModal"));
+            buyModal.show();
+        }
+
+        function confirmPurchase() {
+            const mpesaCode = document.getElementById("mpesaCode").value.trim();
+            const listingId = document.getElementById("mpesaCode").getAttribute("data-listing-id");
+            const sellerId = document.getElementById("mpesaCode").getAttribute("data-seller-id");
+
+            if (!mpesaCode) {
+                Swal.fire("Error", "Please enter an Mpesa code!", "error");
+                return;
+            }
+
+            const user = localStorage.getItem("user");
+            const userData = JSON.parse(user);
+            // Get seller_id directly from productListings data
+            // const listing = productListings.find(item => item.id == listingId);
+            // if (!listing) {
+            //     Swal.fire("Error", "Listing not found.", "error");
+            //     return;
+            // }
+
+            // const sellerId = listing.seller_id;
+            console.log("User Logged in:", user, "Listing ID:", listingId, "Mpesa Code:", mpesaCode, "Seller ID:", sellerId);
+
+            // Send purchase request to backend
+            fetch(`${window.location.origin}/maizemarket/backend/process_purchase.php`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    listing_id: listingId,
+                    buyer_id: userData.id,
+                    seller_id: sellerId,
+                    mpesa_code: mpesaCode
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 200) {
+                        Swal.fire("Success", "Purchase successful!", "success").then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire("Error", data.message, "error");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error processing purchase:", error);
+                    Swal.fire("Error", "Something went wrong!", "error");
+                });
+        }
+
+        function buyProduct(id) {
+            alert("Redirecting to purchase page for product ID: " + id);
             // Implement the purchase functionality
         }
 

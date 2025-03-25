@@ -104,6 +104,10 @@ include 'header.php'; // Ensure the header is included ?>
                     <p><strong>Price:</strong> Ksh <span id="buyProductPrice"></span> per <span
                             id="buyProductUnit"></span></p>
                     <div class="mb-3">
+                        <label for="quantityAmount" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantityAmount" min="1" placeholder="Enter quantity">
+                    </div>
+                    <div class="mb-3">
                         <label for="mpesaCode" class="form-label">Enter Mpesa Code</label>
                         <input type="text" class="form-control" id="mpesaCode" placeholder="e.g., MPESA123456">
                     </div>
@@ -258,38 +262,37 @@ include 'header.php'; // Ensure the header is included ?>
             buyModal.show();
         }
 
+        // Update the confirmPurchase function
         function confirmPurchase() {
             const mpesaCode = document.getElementById("mpesaCode").value.trim();
+            const quantity = parseInt(document.getElementById("quantityAmount").value);
             const listingId = document.getElementById("mpesaCode").getAttribute("data-listing-id");
-            const sellerId = document.getElementById("mpesaCode").getAttribute("data-seller-id");
-
+        
             if (!mpesaCode) {
                 Swal.fire("Error", "Please enter an Mpesa code!", "error");
                 return;
             }
-
+            if (!quantity || quantity < 1) {
+                Swal.fire("Error", "Please enter a valid quantity!", "error");
+                return;
+            }
+        
             const user = localStorage.getItem("user");
             const userData = JSON.parse(user);
-            // Get seller_id directly from productListings data
-            // const listing = productListings.find(item => item.id == listingId);
-            // if (!listing) {
-            //     Swal.fire("Error", "Listing not found.", "error");
-            //     return;
-            // }
-
-            // const sellerId = listing.seller_id;
-            console.log("User Logged in:", user, "Listing ID:", listingId, "Mpesa Code:", mpesaCode, "Seller ID:", sellerId);
-
-            // Send purchase request to backend
+        
+            const payload = {
+                listing_id: parseInt(listingId),
+                buyer_id: userData.id,
+                mpesa_code: mpesaCode,
+                quantity: quantity
+            };
+        
+            console.log("Sending payload:", payload);
+        
             fetch(`${window.location.origin}/maizemarket/backend/process_purchase.php`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    listing_id: listingId,
-                    buyer_id: userData.id,
-                    seller_id: sellerId,
-                    mpesa_code: mpesaCode
-                })
+                body: JSON.stringify(payload)
             })
                 .then(response => response.json())
                 .then(data => {

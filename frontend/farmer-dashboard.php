@@ -27,7 +27,7 @@ include 'config.php';
     </nav>
 
     <div class="container mt-5">
-        <h3 class="mb-4">Your Maize Listings</h3>
+        <h3 class="mb-4">Your Product Listings</h3>
         <button type="button" class="btn btn-success mb-3" id="openModalBtn">+ Add Post</button>
         <div class="row" id="maizeListings">
             <!-- 🚀 Maize Listings Load Here -->
@@ -136,13 +136,8 @@ include 'config.php';
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label>Need Transport?</label>
-                            <select class="form-control" name="need_transport" id="editNeedTransport">
-                                <option value="Yes">Yes</option>
-                                <option value="No">No</option>
-                            </select>
-                        </div>
+                        <!-- Need Transport section removed -->
+
                     </div>
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-success">Update Listing</button>
@@ -215,16 +210,16 @@ include 'config.php';
                     timer: 3000,
                     showConfirmButton: false
                 }).then(() => {
-                    window.location.href = "login.php";
+                    // window.location.href = "login.php";
                 });
             }
         }
 
         function loadMaizeListings(farmerId) {
-            fetch(`${window.location.origin}/maizemarket/backend/fetch_f_maize_listings.php?farmer_id=${farmerId}`)
+            fetch(`${window.location.origin}/maizemarket/backend/fetch_f_maize_listings.php?user_id=${farmerId}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log("API Response:", data); // ✅ Debugging line
+                    console.log("API Response:", data);
 
                     if (!Array.isArray(data.data)) {
                         console.error("Unexpected API Response:", data);
@@ -236,51 +231,45 @@ include 'config.php';
                     listingsContainer.innerHTML = "";
 
                     if (data.data.length === 0) {
-                        listingsContainer.innerHTML = `<p class="text-center">No maize listings found.</p>`;
+                        listingsContainer.innerHTML = `<p class="text-center">No product listings found.</p>`;
                         return;
                     }
 
-                    data.data.forEach(maize => {
+                    data.data.forEach(product => {
                         listingsContainer.innerHTML += `
                     <div class="col-md-4 mb-3">
                         <div class="card p-3">
-                             <h5>${maize.quantity} - ${maize.unit_name}</h5>
-                            <p><strong>Moisture:</strong> ${maize.moisture_percentage !== null && maize.moisture_percentage !== undefined ? maize.moisture_percentage + "%" : "n/a"}</p>
-                            <p><strong>Aflatoxin:</strong> ${maize.aflatoxin_level !== null && maize.aflatoxin_level !== undefined ? maize.aflatoxin_level + " ppb" : "n/a"}</p>
-                            <p><strong>Price:</strong> Kes. ${maize.price_per_unit} / ${maize.unit_name}</p>
-                            <p><strong>Location:</strong> ${maize.location}</p>
-                            <p><strong>Need Transport:</strong> ${maize.need_transport}</p>
-                            <p><strong>Status:</strong> ${maize.status}</p>
-                            <p><strong>Listed On:</strong> ${maize.listing_date}</p>
+                            <h5>${product.product_name}</h5>
+                            <p><strong>Quantity:</strong> ${product.quantity} ${product.unit_name}</p>
+                            <p><strong>Price:</strong> Ksh ${product.price_per_quantity} per ${product.unit_name}</p>
+                            <p><strong>Status:</strong> ${product.status_name}</p>
+                            <p><strong>Listed On:</strong> ${product.created_at}</p>
+                            ${product.product_image_url ? `<img src="${product.product_image_url}" class="img-fluid mb-2" alt="Product Image">` : ''}
                             <button class="btn btn-primary" 
-                                onclick="openEditModal(${maize.id}, '${maize.quantity}', '${maize.quantity_unit_id}', '${maize.price_per_unit}', '${maize.county_id}', '${maize.location}', '${maize.need_transport}')">
-                            Edit </button>
+                                onclick='openEditModal(${JSON.stringify(product)})'>
+                                Update
+                            </button>
                         </div>
-                    </div>
-                `;
-
-                        console.log(`Editing #:${maize.id}, '${maize.quantity}', '${maize.quantity_unit_id}',`);
+                    </div>`;
                     });
                 })
                 .catch(error => {
                     console.error("Fetch Error:", error);
-                    Swal.fire({ icon: "error", title: "Error", text: "Failed to load maize listings." });
+                    Swal.fire({ icon: "error", title: "Error", text: "Failed to load product listings." });
                 });
         }
 
-        function openEditModal(id, quantity, quantityUnitId, pricePerUnit, countyId, location, needTransport) {
-            document.getElementById("editListingId").value = id;
-            document.getElementById("editQuantity").value = quantity;
-            document.getElementById("editQuantityUnitId").value = quantityUnitId;
-            document.getElementById("editPricePerUnit").value = pricePerUnit;
-            document.getElementById("editCountyId").value = countyId;
-            document.getElementById("editLocation").value = location;
-            // Ensure the correct transport option is selected
-            document.getElementById("editNeedTransport").value = needTransport;
-
-            // Debugging log to verify values
-            console.log("Editing Listing:", { id, quantity, quantityUnitId, pricePerUnit, location, needTransport });
-
+        function openEditModal(product) {
+            console.log("Opening modal with product:", product);
+            
+            document.getElementById("editListingId").value = product.id;
+            document.getElementById("editQuantity").value = product.quantity;
+            document.getElementById("editQuantityUnitId").value = product.quantity_type_id;
+            document.getElementById("editPricePerUnit").value = product.price_per_quantity;
+            document.getElementById("editCountyId").value = product.county_id;
+            document.getElementById("editLocation").value = product.location;
+            
+            // Show the modal
             let modal = new bootstrap.Modal(document.getElementById("editPostModal"));
             modal.show();
         }

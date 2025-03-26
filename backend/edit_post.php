@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Check required fields
-if (!isset($_POST['seller_id'], $_POST['product_id'], $_POST['quantity'], $_POST['quantity_type_id'], $_POST['price_per_quantity'])) {
+if (!isset($_POST['id'], $_POST['product_id'], $_POST['quantity'], $_POST['quantity_type_id'], $_POST['price_per_quantity'])) {
     echo json_encode(["status" => 400, "message" => "Missing required fields"]);
     exit();
 }
@@ -16,7 +16,7 @@ if (!isset($_POST['seller_id'], $_POST['product_id'], $_POST['quantity'], $_POST
 $price = $_POST['quantity'] * $_POST['price_per_quantity'];
 
 // Prepare SQL query with correct placeholders
-$stmt = $conn->prepare("INSERT INTO product_listings (seller_id, product_id, quantity, quantity_type_id, price_per_quantity, price, status_id) VALUES (?, ?, ?, ?, ?, ?, 1)");
+$stmt = $conn->prepare("UPDATE product_listings SET product_id = ?, quantity = ?, quantity_type_id = ?, price_per_quantity = ?, price = ? WHERE id = ?");
 
 // Check if the query was prepared correctly
 if (!$stmt) {
@@ -24,19 +24,19 @@ if (!$stmt) {
     exit();
 }
 
-// Bind parameters correctly - using 'i' for integers and 'd' for decimals
-$stmt->bind_param("iiiddd", 
-    $_POST['seller_id'], 
-    $_POST['product_id'], 
-    $_POST['quantity'], 
-    $_POST['quantity_type_id'], 
+// Bind parameters correctly
+$stmt->bind_param("iiiddi", 
+    $_POST['product_id'],
+    $_POST['quantity'],
+    $_POST['quantity_type_id'],
     $_POST['price_per_quantity'],
-    $price
+    $price,
+    $_POST['id']
 );
 
 // Execute query and return JSON response
 if ($stmt->execute()) {
-    echo json_encode(["status" => 200, "message" => "Listing added successfully!"]);
+    echo json_encode(["status" => 200, "message" => "Listing updated successfully!"]);
 } else {
     echo json_encode(["status" => 500, "message" => "Database error: " . $stmt->error]);
 }

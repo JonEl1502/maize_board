@@ -16,7 +16,8 @@ if (!$user_id) {
 
 try {
     // Query to fetch user's products
-    $query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, 
+    $query = "SELECT pl.id, p.id AS product_id, p.name AS product_name, pl.quantity, 
+                     qt.id AS quantity_id, qt.unit_name, 
                      pl.price_per_quantity, pl.product_image_url, pl.status_id, 
                      s.name AS status_name, pl.created_at,
                      u.id AS user_id, u.name AS user_name, u.email AS user_email, 

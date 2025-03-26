@@ -21,7 +21,11 @@ include 'header.php'; // Ensure the header is included ?>
         <nav class="navbar navbar-dark bg-success">
             <div class="container">
                 <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
+                
+            <div class="d-flex align-items-end">
+                <a class="btn btn-outline-light me-4" href="sales_and_purchases.php">Sales & Purchases</a>
                 <button onclick="logout()" class="btn btn-light">Logout</button>
+            </div>
             </div>
         </nav>
     </div>

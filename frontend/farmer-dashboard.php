@@ -21,8 +21,12 @@ include 'config.php';
 <body class="bg-light">
     <nav class="navbar navbar-dark bg-success">
         <div class="container">
-            <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
-            <button onclick="logout()" class="btn btn-light">Logout</button>
+            <a class="navbar-brand me-4" href="#" id="welcomeMessage">Loading...</a>
+
+            <div class="d-flex align-items-end">
+                <a class="btn btn-outline-light me-4" href="sales_and_purchases.php">Sales</a>
+                <button onclick="logout()" class="btn btn-light">Logout</button>
+            </div>
         </div>
     </nav>
 
@@ -350,7 +354,7 @@ include 'config.php';
 
         function openEditModal(product) {
             console.log("Opening modal with product:", product);
-            
+
             // Set values for all fields
             document.getElementById("editListingId").value = product.id;
             document.getElementById("editQuantity").value = product.quantity;

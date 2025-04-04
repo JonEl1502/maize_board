@@ -208,7 +208,7 @@ include 'config.php';
             console.log("Logged in Farmer:", user);
             if (user) {
                 const userData = JSON.parse(user);
-                document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.name} - Farmer`;
+                document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.entity_name}  (Farmer)`;
                 document.getElementById("farmerId").value = userData.id;
                 loadMaizeListings(userData.id);
             } else {

@@ -139,7 +139,7 @@ include 'header.php'; // Ensure the header is included ?>
             console.log("Logged in :", user);
             if (user) {
                 const userData = JSON.parse(user);
-                document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.name} - ${userData.role}`;
+                document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.entity_name}  (${userData.role})`;
                 if (userData.role_id === 2) {
                     document.getElementById("title_name").innerText = "My Product Listings";
                 }

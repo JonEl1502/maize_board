@@ -28,7 +28,8 @@ if (empty($email) || empty($password)) {
 }
 
 // ✅ SQL Query to get user details
-$sql = "SELECT u.id, u.name, u.email, u.password, u.role_id, r.name AS role_name 
+$sql = "SELECT u.id, u.name, u.email, u.password, u.role_id, r.name AS role_name, 
+        u.business_name, u.farm_name 
         FROM users u 
         JOIN roles r ON u.role_id = r.id 
         WHERE u.email = ?";
@@ -46,16 +47,26 @@ $stmt->store_result();
 
 // ✅ Verify user exists
 if ($stmt->num_rows > 0) {
-    $stmt->bind_result($id, $name, $dbemail, $hashedPassword, $role_id, $role_name);
+    $stmt->bind_result($id, $name, $dbemail, $hashedPassword, $role_id, $role_name, $business_name, $farm_name);
     $stmt->fetch();
 
     // ✅ Verify password
     if (password_verify($password, $hashedPassword)) {
+        // Debug logging
+        error_log("Business Name: " . ($business_name ?? 'null'));
+        error_log("Farm Name: " . ($farm_name ?? 'null'));
+        
         $_SESSION['id'] = $id;
         $_SESSION['name'] = $name;
         $_SESSION['email'] = $dbemail;
         $_SESSION['role_id'] = $role_id;
         $_SESSION['role'] = $role_name;
+        
+        // Get the appropriate business/farm name
+        $entity_name = !empty($business_name) ? $business_name : (!empty($farm_name) ? $farm_name : null);
+        $_SESSION['entity_name'] = $entity_name;
+
+        error_log("Final Entity Name: " . ($entity_name ?? 'null'));
 
         // ✅ Success Response
         echo json_encode([
@@ -67,6 +78,7 @@ if ($stmt->num_rows > 0) {
                 "email" => $dbemail,
                 "role_id" => $role_id,
                 "role" => $role_name,
+                "entity_name" => $entity_name
             ]
         ]);
         exit();

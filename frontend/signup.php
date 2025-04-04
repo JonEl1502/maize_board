@@ -46,6 +46,7 @@
                         <label class="form-label">Phone</label>
                         <input type="text" class="form-control" name="phone" id="phone" required>
                     </div>
+
                     <div class="mb-2">
                         <label class="form-label">Address</label>
                         <textarea class="form-control" name="address" id="address" rows="2" required></textarea>
@@ -56,6 +57,19 @@
                             <option value="">Loading...</option>
                         </select>
                     </div>
+                    
+                    <!-- Add business name field -->
+                    <div class="mb-2" id="businessNameField" style="display: none;">
+                        <label class="form-label">Business Name</label>
+                        <input type="text" class="form-control" name="business_name" id="business_name">
+                    </div>
+
+                    <!-- Add farm name field -->
+                    <div class="mb-2" id="farmNameField" style="display: none;">
+                        <label class="form-label">Farm Name</label>
+                        <input type="text" class="form-control" name="farm_name" id="farm_name">
+                    </div>
+
                     <button type="submit" class="btn btn-success w-100 btn-lg">Register</button>
                 </form>
                 <div class="text-center mt-3">
@@ -76,7 +90,7 @@
                 if (data.status === 200) {
                     selectedRole.innerHTML = '<option value="">Select Role</option>';
                     data.roles.forEach(role => {  // Use `roles`, not `farmer_types`
-                        if (role.name === "Admin") return;  // Skip Admin role
+                        if (role.name === "Admin" || role.name === "Retailer") return;  // Skip Admin role
                         selectedRole.innerHTML += `<option value="${role.id}">${role.name}</option>`;
                     });
                 } else {
@@ -84,6 +98,29 @@
                 }
             } catch (error) {
                 selectedRole.innerHTML = '<option value="">Error fetching data</option>';
+            }
+        });
+
+        // Add role change listener
+        document.getElementById("role").addEventListener("change", function() {
+            const businessNameField = document.getElementById("businessNameField");
+            const businessNameInput = document.getElementById("business_name");
+            const farmNameField = document.getElementById("farmNameField");
+            const farmNameInput = document.getElementById("farm_name");
+            
+            // Hide both fields first
+            businessNameField.style.display = "none";
+            farmNameField.style.display = "none";
+            businessNameInput.required = false;
+            farmNameInput.required = false;
+
+            const selectedRole = this.options[this.selectedIndex].text;
+            if (selectedRole === "Wholesaler") {
+                businessNameField.style.display = "block";
+                businessNameInput.required = true;
+            } else if (selectedRole === "Farmer") {
+                farmNameField.style.display = "block";
+                farmNameInput.required = true;
             }
         });
 

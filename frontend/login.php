@@ -66,7 +66,7 @@
                 });
 
                 let result = await response.json();
-                console.log("Logged in result:", result);
+                console.log("Logged in result:", JSON.stringify(result));
 
                 if (result.status === 200) {
                     // Save user data in localStorage

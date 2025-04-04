@@ -12,6 +12,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $phone = trim($_POST['phone'] ?? '');
     $address = trim($_POST['address'] ?? '');
     $role_id = trim(trim($_POST['role'] ?? 1));
+    $business_name = trim($_POST['business_name'] ?? null);
+    $farm_name = trim($_POST['farm_name'] ?? null);
     $created_at = date('Y-m-d H:i:s');
 
     if (empty($name) || empty($email) || empty($password) || empty($phone) || empty($address)) {
@@ -43,13 +45,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     // Insert new user
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password, phone, address, role_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password, phone, address, role_id, business_name, farm_name, created_at) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     if (!$stmt) {
         echo json_encode(["status" => 500, "message" => "Prepare failed: " . $conn->error]);
         exit();
     }
 
-    $stmt->bind_param("sssssis", $name, $email, $hashedPassword, $phone, $address, $role_id, $created_at);
+    $stmt->bind_param("sssssssss", $name, $email, $hashedPassword, $phone, $address, $role_id, $business_name, $farm_name, $created_at);
 
     if ($stmt->execute()) {
         echo json_encode(["status" => 200, "message" => "Registration successful! Redirecting to login..."]);

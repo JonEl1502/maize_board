@@ -31,7 +31,7 @@ $query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.pr
           JOIN quantity_types qt ON pl.quantity_type_id = qt.id
           JOIN statuses s ON pl.status_id = s.id
           JOIN users u ON pl.seller_id = u.id
-          WHERE 1=1";
+          WHERE pl.quantity > 0";  // Only fetch listings with quantity > 0
 
 // Apply filters based on role_id and seller_id
 if ($role_id === 2 && $seller_id) {

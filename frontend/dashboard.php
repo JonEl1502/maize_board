@@ -24,8 +24,19 @@ include 'config.php';
             <a class="navbar-brand me-4" href="#" id="welcomeMessage">Loading...</a>
 
             <div class="d-flex align-items-end">
-                <a class="btn btn-outline-light me-4" href="sales_and_purchases.php">Sales</a>
-                <button onclick="logout()" class="btn btn-light">Logout</button>
+                <!-- <a class="btn btn-outline-light me-4" href="home.php">Home</a> -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        Menu
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="sales.php">My Sales</a></li>
+                    <li><a class="dropdown-item" href="purchases.php">My Purchases</a></li>
+                    <li><a class="dropdown-item" href="home.php">Buy</a></li>
+                    <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
+                    <!-- Add more dropdown items here if needed -->
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>

@@ -12,24 +12,30 @@ $role_ids = isset($_GET['role_id']) ? explode(',', $_GET['role_id']) : null;
 if ($role_id === 2 && $user_id) {
     // If the user is a farmer, show only their product listings
     $query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.price_per_quantity, pl.product_image_url,
-                     u.id AS user_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+                     u.id AS user_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
+                     COALESCE(SUM(s.quantity), 0) AS sold_quantity, (pl.quantity - COALESCE(SUM(s.quantity), 0)) AS remaining_quantity
               FROM product_listings pl
               JOIN products p ON pl.product_id = p.id
               JOIN quantity_types qt ON pl.quantity_type_id = qt.id
               JOIN users u ON pl.user_id = u.id
-              WHERE pl.user_id = ?";
+              LEFT JOIN sales s ON pl.id = s.listing_id
+              WHERE pl.user_id = ?
+              GROUP BY pl.id";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $user_id);
 } elseif (!empty($role_ids)) {
     // If multiple role IDs are provided, filter by them
     $placeholders = implode(',', array_fill(0, count($role_ids), '?'));
     $query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.price_per_quantity, pl.product_image_url,
-                     u.id AS user_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+                     u.id AS user_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
+                     COALESCE(SUM(s.quantity), 0) AS sold_quantity, (pl.quantity - COALESCE(SUM(s.quantity), 0)) AS remaining_quantity
               FROM product_listings pl
               JOIN products p ON pl.product_id = p.id
               JOIN quantity_types qt ON pl.quantity_type_id = qt.id
               JOIN users u ON pl.user_id = u.id
-              WHERE u.role_id IN ($placeholders)";
+              LEFT JOIN sales s ON pl.id = s.listing_id
+              WHERE u.role_id IN ($placeholders)
+              GROUP BY pl.id";
     
     $stmt = $conn->prepare($query);
     $types = str_repeat('i', count($role_ids));
@@ -37,11 +43,14 @@ if ($role_id === 2 && $user_id) {
 } else {
     // Show all product listings if no specific user or role filter is applied
     $query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.price_per_quantity, pl.product_image_url,
-                     u.id AS user_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+                     u.id AS user_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
+                     COALESCE(SUM(s.quantity), 0) AS sold_quantity, (pl.quantity - COALESCE(SUM(s.quantity), 0)) AS remaining_quantity
               FROM product_listings pl
               JOIN products p ON pl.product_id = p.id
               JOIN quantity_types qt ON pl.quantity_type_id = qt.id
-              JOIN users u ON pl.user_id = u.id";
+              JOIN users u ON pl.user_id = u.id
+              LEFT JOIN sales s ON pl.id = s.listing_id
+              GROUP BY pl.id";
     $stmt = $conn->prepare($query);
 }
 

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Maize Board</title>
+    <title>Login - Farm Market</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -20,7 +20,8 @@
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
         <div class="container">
-            <a class="navbar-brand" href="/">Maize Board</a>
+            <a class="navbar-brand" href="/">Farm Market</a>
+            <!-- <a class="btn btn-outline-light" href="index.php"><i class="fas fa-arrow-left"></i> Back</a> -->
         </div>
     </nav>
 
@@ -71,7 +72,7 @@
                 if (result.status === 200) {
                     // Save user data in localStorage
                     localStorage.setItem("user", JSON.stringify(result.user));
-
+                    let userData = result.user
                     Swal.fire({
                         icon: "success",
                         title: "Success!",
@@ -80,8 +81,17 @@
                         showConfirmButton: false
                     }).then(() => {
                         // Redirect based on role_id
-                        const farmerPage = "/maizemarket/frontend/farmer-dashboard.php";
+                        const currentPage = window.location.pathname;
+                        const farmerPage = "/maizemarket/frontend/dashboard.php";
                         const homePage = "/maizemarket/frontend/home.php";
+
+                        if ((userData.role_id === 5 && currentPage !== homePage) ||
+                            (userData.role_id !== 5 && currentPage !== farmerPage)) {
+                            setTimeout(() => {
+                                console.log("Redirecting to:", userData.role_id === 5 ? homePage : farmerPage);
+                                window.location.href = userData.role_id === 5 ? homePage : farmerPage;
+                            }, 1000);
+                        }
                         window.location.href = result.user.role_id === 2 ? farmerPage : homePage;
                     });
                 } else {
@@ -108,7 +118,7 @@
             console.log("User already logged in:", userData);
 
             const currentPage = window.location.pathname;
-            const farmerPage = "/maizemarket/frontend/farmer-dashboard.php";
+            const farmerPage = "/maizemarket/frontend/dashboard.php";
             const boardPage = "/maizemarket/frontend/board-dashboard.php";
             const homePage = "/maizemarket/frontend/home.php";
 

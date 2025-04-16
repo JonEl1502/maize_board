@@ -23,7 +23,9 @@ include 'header.php'; // Ensure the header is included ?>
                 <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
                 
             <div class="d-flex align-items-end">
-                <a class="btn btn-outline-light me-4" href="sales_and_purchases.php">Sales & Purchases</a>
+                <!-- <button onclick="window.history.back()" class="btn btn-outline-light me-4"><i class="fas fa-arrow-left"></i> Back</button>
+                <a class="btn btn-outline-light me-4" href="sales.php">Sales & Purchases</a>-->
+                <button class="btn btn-outline-light me-4" onclick="openCartModal()"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-light text-dark" id="cartCount">0</span></button> 
                 <button onclick="logout()" class="btn btn-light">Logout</button>
             </div>
             </div>
@@ -75,127 +77,120 @@ include 'header.php'; // Ensure the header is included ?>
         </div>
     </div>
 
-    <!-- Seller Details Modal -->
-    <div class="modal fade" id="sellerModal" tabindex="-1" aria-labelledby="sellerModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="sellerModalLabel">Seller Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>Name:</strong> <span id="sellerName"></span></p>
-                    <p><strong>Email:</strong> <span id="sellerEmail"></span></p>
-                    <p><strong>Phone:</strong> <span id="sellerPhone"></span></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Buy Confirmation Modal -->
-    <div class="modal fade" id="buyModal" tabindex="-1" aria-labelledby="buyModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="buyModalLabel">Confirm Purchase</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>Product:</strong> <span id="buyProductName"></span></p>
-                    <p><strong>Price:</strong> Ksh <span id="buyProductPrice"></span> per <span
-                            id="buyProductUnit"></span></p>
-                    <div class="mb-3">
-                        <label for="quantityAmount" class="form-label">Quantity</label>
-                        <input type="number" class="form-control" id="quantityAmount" min="1" placeholder="Enter quantity">
-                    </div>
-                    <div class="mb-3">
-                        <label for="mpesaCode" class="form-label">Enter Mpesa Code</label>
-                        <input type="text" class="form-control" id="mpesaCode" placeholder="e.g., MPESA123456">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" onclick="confirmPurchase()">Confirm & Pay</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS & Dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            loadUser();
-            loadCategories();
-            loadProducts(); // Load products for filtering
-        });
+        // Cart Management
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        
+        function updateCartCount() {
+            document.getElementById('cartCount').textContent = cart.length;
+        }
 
-        function loadUser() {
-            const user = localStorage.getItem("user");
-            console.log("Logged in :", user);
-            if (user) {
-                const userData = JSON.parse(user);
-                document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.entity_name}  (${userData.role})`;
-                if (userData.role_id === 2) {
-                    document.getElementById("title_name").innerText = "My Product Listings";
-                }
-                loadProductListings(userData.id, userData.role_id);
-            } else {
-                Swal.fire({
-                    icon: "warning",
-                    title: "Session Expired",
-                    text: "Redirecting to login...",
-                    timer: 3000,
-                    showConfirmButton: false
-                }).then(() => {
-                    window.location.href = "login.php";
-                });
+        function addToCart(productId, productName, price, unit) {
+            const quantity = 1; // Default quantity
+            const item = {
+                id: productId,
+                name: productName,
+                price: price,
+                unit: unit,
+                quantity: quantity,
+                total: price * quantity
+            };
+            cart.push(item);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount();
+            Swal.fire({
+                icon: 'success',
+                title: 'Added to Cart!',
+                text: `${productName} has been added to your cart.`,
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount();
+            displayCart();
+        }
+
+        function updateQuantity(index, newQuantity) {
+            if (newQuantity > 0) {
+                cart[index].quantity = newQuantity;
+                cart[index].total = cart[index].price * newQuantity;
+                localStorage.setItem('cart', JSON.stringify(cart));
+                displayCart();
             }
         }
 
-        // Load categories into filter dropdown
-        function loadCategories() {
-            fetch(`${window.location.origin}/maizemarket/backend/get_categories.php`)
-                .then(response => response.json())
-                .then(data => {
-                    let categoryDropdown = document.getElementById("filterCategory");
-                    data.categories.forEach(category => {
-                        categoryDropdown.innerHTML += `<option value="${category.id}">${category.name}</option>`;
-                    });
-                });
+        function displayCart() {
+            const cartItems = document.getElementById('cartItems');
+            const cartTotal = document.getElementById('cartTotal');
+            let total = 0;
+
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<p class="text-center">Your cart is empty</p>';
+                cartTotal.textContent = '0.00';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Total</th><th>Action</th></tr></thead><tbody>';
+            
+            cart.forEach((item, index) => {
+                total += item.total;
+                html += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>Ksh ${item.price.toFixed(2)} per ${item.unit}</td>
+                        <td>
+                            <input type="number" min="1" value="${item.quantity}" 
+                                class="form-control form-control-sm w-75" 
+                                onchange="updateQuantity(${index}, this.value)">
+                        </td>
+                        <td>Ksh ${item.total.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="removeFromCart(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            cartItems.innerHTML = html;
+            cartTotal.textContent = total.toFixed(2);
         }
 
-        // Load products into filter dropdown
-        function loadProducts() {
-            fetch(`${window.location.origin}/maizemarket/backend/get_products.php`)
-                .then(response => response.json())
-                .then(data => {
-                    let productDropdown = document.getElementById("filterProduct");
-                    data.products.forEach(product => {
-                        productDropdown.innerHTML += `<option value="${product.id}">${product.name}</option>`;
-                    });
-                });
+        function openCartModal() {
+            displayCart();
+            new bootstrap.Modal(document.getElementById('cartModal')).show();
         }
 
-        // Handle filter form submission
-        document.getElementById("filterForm").addEventListener("submit", function (e) {
-            e.preventDefault();
-            const filterName = document.getElementById("filterName").value.trim();
-            const filterProduct = document.getElementById("filterProduct").value;
-            const filterCategory = document.getElementById("filterCategory").value;
-            const filterPriceMin = document.getElementById("filterPriceMin").value;
-            const filterPriceMax = document.getElementById("filterPriceMax").value;
+        function proceedToCheckout() {
+            if (cart.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Empty Cart',
+                    text: 'Please add items to your cart before checking out.'
+                });
+                return;
+            }
 
-            loadProductListings(null, null, { filterName, filterProduct, filterCategory, filterPriceMin, filterPriceMax });
+            // Implement checkout logic here
+            Swal.fire({
+                icon: 'info',
+                title: 'Proceeding to Checkout',
+                text: 'This feature will be implemented soon!'
+            });
+        }
+
+        // Initialize cart count on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
         });
 
         function loadProductListings(userId, roleId, filters = {}) {
-            let url = `${window.location.origin}/maizemarket/backend/home_backend.php`;
-
+            let url = `${window.location.origin}/maizemarket/backend/product_listings.php`;
             let params = new URLSearchParams();
             if (filters.filterName) params.append("filterName", filters.filterName);
             if (filters.filterProduct) params.append("product_id", filters.filterProduct);
@@ -211,14 +206,8 @@ include 'header.php'; // Ensure the header is included ?>
                 .then(response => response.json())
                 .then(response => {
                     let listingsContainer = document.getElementById("productListings");
-                    if (!listingsContainer) {
-                        console.error("Element with ID 'productListings' not found.");
-                        return;
-                    }
-
                     listingsContainer.innerHTML = "";
                     let data = response.data;
-                    // console.log("Product Listings:", JSON.stringify(data));
                     if (data.length > 0) {
                         data.forEach(row => {
                             listingsContainer.innerHTML += `
@@ -226,18 +215,20 @@ include 'header.php'; // Ensure the header is included ?>
                                 <div class="card shadow-sm">
                                     <div class="card-body">
                                         <h5 class="card-title">${row.product_name}</h5>
+                                        <p class="card-text">${row.description}</p>
                                         <p><strong>Quantity:</strong> ${row.quantity} ${row.unit_name}</p>
+                                        <p><strong>Sold:</strong> ${row.sold_quantity} ${row.unit_name}</p>
+                                        <p><strong>Remaining:</strong> ${row.remaining_quantity} ${row.unit_name}</p>
                                         <p><strong>Price:</strong> Ksh ${parseFloat(row.price_per_quantity).toFixed(2)} per ${row.unit_name}</p>
-                                        <button class="btn ${row.status_id === 1 ? 'btn-primary' : 'btn-secondary'} btn-sm" 
-                                                onclick="${row.status_id === 1 ? `openBuyModal(${row.id}, '${row.seller_id}', '${row.product_name}', '${row.price_per_quantity}', '${row.unit_name}')` : ''}" 
-                                                ${row.status_id !== 1 ? 'disabled' : ''}>
-                                            ${row.status_id === 1 ? 'Buy Now' : row.status_name}
+                                        <button class="btn btn-primary btn-sm" onclick="addToCart(${row.id}, '${row.product_name}', ${row.price_per_quantity}, '${row.unit_name}')">
+                                            <i class="fas fa-cart-plus"></i> Add to Cart
                                         </button>
                                         <button class="btn btn-info btn-sm mt-2" onclick="openSellerModal('${row.user_name}', '${row.user_email}', '${row.user_phone}')">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     </div>
                                 </div>
+                            </div>
                             </div>`;
                         });
                     } else {
@@ -246,96 +237,541 @@ include 'header.php'; // Ensure the header is included ?>
                 })
                 .catch(error => {
                     console.error("Error fetching product listings:", error);
-                    let listingsContainer = document.getElementById("productListings");
-                    if (listingsContainer) {
-                        listingsContainer.innerHTML = '<p class="text-center">Error loading products.</p>';
-                    }
+                    listingsContainer.innerHTML = '<p class="text-center">Error loading products.</p>';
                 });
         }
-
-        function openBuyModal(id, sellerId, productName, price, unit) {
-            document.getElementById("buyProductName").innerText = productName;
-            document.getElementById("buyProductPrice").innerText = price;
-            document.getElementById("buyProductUnit").innerText = unit;
-            document.getElementById("mpesaCode").value = ""; // Clear previous input
-            console.log("Clicked Buy Now for Listing ID:", id, "Seller ID:", sellerId); // Debugging log
-            document.getElementById("mpesaCode").setAttribute("data-listing-id", id); // Store listing ID
-            document.getElementById("mpesaCode").setAttribute("data-seller-id", sellerId); // Store seller ID
-
-            let buyModal = new bootstrap.Modal(document.getElementById("buyModal"));
-            buyModal.show();
-        }
-
-        // Update the confirmPurchase function
-        function confirmPurchase() {
-            const mpesaCode = document.getElementById("mpesaCode").value.trim();
-            const quantity = parseInt(document.getElementById("quantityAmount").value);
-            const listingId = document.getElementById("mpesaCode").getAttribute("data-listing-id");
-        
-            if (!mpesaCode) {
-                Swal.fire("Error", "Please enter an Mpesa code!", "error");
-                return;
-            }
-            if (!quantity || quantity < 1) {
-                Swal.fire("Error", "Please enter a valid quantity!", "error");
-                return;
-            }
-        
-            const user = localStorage.getItem("user");
-            const userData = JSON.parse(user);
-        
-            const payload = {
-                listing_id: parseInt(listingId),
-                buyer_id: userData.id,
-                mpesa_code: mpesaCode,
-                quantity: quantity
-            };
-        
-            console.log("Sending payload:", payload);
-        
-            fetch(`${window.location.origin}/maizemarket/backend/process_purchase.php`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 200) {
-                        Swal.fire("Success", "Purchase successful!", "success").then(() => {
-                            location.reload();
-                        });
-                    } else {
-                        Swal.fire("Error", data.message, "error");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error processing purchase:", error);
-                    Swal.fire("Error", "Something went wrong!", "error");
-                });
-        }
-
-        function buyProduct(id) {
-            alert("Redirecting to purchase page for product ID: " + id);
-            // Implement the purchase functionality
-        }
-
-        function openSellerModal(name, email, phone) {
-            document.getElementById("sellerName").innerText = name;
-            document.getElementById("sellerEmail").innerText = email;
-            document.getElementById("sellerPhone").innerText = phone;
-
-            let sellerModal = new bootstrap.Modal(document.getElementById("sellerModal"));
-            sellerModal.show();
-        }
-
-        function logout() {
-            localStorage.removeItem("user");
-            window.location.href = "logout.php";
-        }
-
     </script>
+</body>
 
-    <?php include 'footer.php'; ?>
+<!-- Seller Details Modal -->
+<div class="modal fade" id="sellerModal" tabindex="-1" aria-labelledby="sellerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sellerModalLabel">Seller Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Name:</strong> <span id="sellerName"></span></p>
+                <p><strong>Email:</strong> <span id="sellerEmail"></span></p>
+                <p><strong>Phone:</strong> <span id="sellerPhone"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Shopping Cart Modal -->
+<div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cartModalLabel">Shopping Cart</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="cartItems"></div>
+                <div class="text-end mt-3">
+                    <h5>Total: Ksh <span id="cartTotal">0.00</span></h5>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" onclick="proceedToCheckout()">Proceed to Checkout</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Buy Confirmation Modal -->
+<div class="modal fade" id="buyModal" tabindex="-1" aria-labelledby="buyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="buyModalLabel">Confirm Purchase</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Product:</strong> <span id="buyProductName"></span></p>
+                <p><strong>Price:</strong> Ksh <span id="buyProductPrice"></span> per <span
+                        id="buyProductUnit"></span></p>
+                <div class="mb-3">
+                    <label for="quantityAmount" class="form-label">Quantity</label>
+                    <input type="number" class="form-control" id="quantityAmount" min="1" placeholder="Enter quantity">
+                </div>
+                <div class="mb-3">
+                    <label for="mpesaCode" class="form-label">Enter Mpesa Code</label>
+                    <input type="text" class="form-control" id="mpesaCode" placeholder="e.g., MPESA123456">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="confirmPurchase()">Confirm & Pay</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS & Dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Initialize cart in localStorage if it doesn't exist
+    if (!localStorage.getItem('cart')) {
+        localStorage.setItem('cart', JSON.stringify([]));
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        loadUser();
+        loadCategories();
+        loadProducts(); // Load products for filtering
+        updateCartCount(); // Update cart count on page load
+    });
+
+    function loadUser() {
+        const user = localStorage.getItem("user");
+        console.log("Logged in :", user);
+        if (user) {
+            const userData = JSON.parse(user);
+            console.log(`Logged IDD :${userData.name} `);
+            if(userData.role_id === 5){
+                document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.name}  (${userData.role})`;
+            }
+            document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.entity_name}  (${userData.role})`;
+            if (userData.role_id === 2) {
+                document.getElementById("title_name").innerText = "My Product Listings";
+            }
+            loadProductListings(userData.id, userData.role_id);
+        } else {
+            Swal.fire({
+                icon: "warning",
+                title: "Session Expired",
+                text: "Redirecting to login...",
+                timer: 3000,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = "login.php";
+            });
+        }
+    }
+
+    // Load categories into filter dropdown
+    function loadCategories() {
+        fetch(`${window.location.origin}/maizemarket/backend/get_categories.php`)
+            .then(response => response.json())
+            .then(data => {
+                let categoryDropdown = document.getElementById("filterCategory");
+                data.categories.forEach(category => {
+                    categoryDropdown.innerHTML += `<option value="${category.id}">${category.name}</option>`;
+                });
+            });
+    }
+
+    // Load products into filter dropdown
+    function loadProducts() {
+        fetch(`${window.location.origin}/maizemarket/backend/get_products.php`)
+            .then(response => response.json())
+            .then(data => {
+                let productDropdown = document.getElementById("filterProduct");
+                data.products.forEach(product => {
+                    productDropdown.innerHTML += `<option value="${product.id}">${product.name}</option>`;
+                });
+            });
+    }
+
+    // Handle filter form submission
+    document.getElementById("filterForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const filterName = document.getElementById("filterName").value.trim();
+        const filterProduct = document.getElementById("filterProduct").value;
+        const filterCategory = document.getElementById("filterCategory").value;
+        const filterPriceMin = document.getElementById("filterPriceMin").value;
+        const filterPriceMax = document.getElementById("filterPriceMax").value;
+
+        loadProductListings(null, null, { filterName, filterProduct, filterCategory, filterPriceMin, filterPriceMax });
+    });
+
+    function addToCart(productId, productName, price, unit) {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const existingItem = cart.find(item => item.productId === productId);
+
+        if (existingItem) {
+            existingItem.quantity += 1;
+        } else {
+            cart.push({
+                productId: productId,
+                productName: productName,
+                price: price,
+                unit: unit,
+                quantity: 1
+            });
+        }
+
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCount();
+        Swal.fire({
+            icon: 'success',
+            title: 'Added to Cart!',
+            text: 'Item has been added to your cart.',
+            showConfirmButton: false,
+            timer: 1500
+        });
+    }
+
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+        document.getElementById('cartCount').textContent = totalItems;
+    }
+
+    function openCartModal() {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const cartItemsContainer = document.getElementById('cartItems');
+        let total = 0;
+
+        if (cart.length === 0) {
+            cartItemsContainer.innerHTML = '<p class="text-center">Your cart is empty</p>';
+            document.getElementById('cartTotal').textContent = '0.00';
+        } else {
+            let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Total</th><th>Actions</th></tr></thead><tbody>';
+            
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                html += `
+                    <tr>
+                        <td>${item.productName}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="updateCartItemQuantity(${index}, -1)">-</button>
+                            <span class="mx-2">${item.quantity}</span>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="updateCartItemQuantity(${index}, 1)">+</button>
+                        </td>
+                        <td>Ksh ${item.price} per ${item.unit}</td>
+                        <td>Ksh ${itemTotal.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="removeFromCart(${index})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table></div>';
+            cartItemsContainer.innerHTML = html;
+            document.getElementById('cartTotal').textContent = total.toFixed(2);
+        }
+
+        new bootstrap.Modal(document.getElementById('cartModal')).show();
+    }
+
+    function updateCartItemQuantity(index, change) {
+        const cart = JSON.parse(localStorage.getItem('cart'));
+        cart[index].quantity = Math.max(1, cart[index].quantity + change);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCount();
+        openCartModal(); // Refresh cart modal
+    }
+
+    function removeFromCart(index) {
+        const cart = JSON.parse(localStorage.getItem('cart'));
+        cart.splice(index, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCount();
+        openCartModal(); // Refresh cart modal
+    }
+
+    function proceedToCheckout() {
+        const cart = JSON.parse(localStorage.getItem('cart'));
+        if (cart.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Empty Cart',
+                text: 'Please add items to your cart before checking out.'
+            });
+            return;
+        }
+
+        // Close cart modal
+        bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
+
+        // Update the buy modal to show cart summary
+        const buyModalBody = document.querySelector('#buyModal .modal-body');
+        let cartSummaryHTML = '<h5>Cart Summary</h5><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Total</th></tr></thead><tbody>';
+        
+        let grandTotal = 0;
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            grandTotal += itemTotal;
+            cartSummaryHTML += `
+                <tr>
+                    <td>${item.productName}</td>
+                    <td>${item.quantity}</td>
+                    <td>Ksh ${item.price} per ${item.unit}</td>
+                    <td>Ksh ${itemTotal.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+        
+        cartSummaryHTML += `</tbody></table></div>
+        <div class="text-end mb-3">
+            <h5>Grand Total: Ksh ${grandTotal.toFixed(2)}</h5>
+        </div>
+        <div class="mb-3">
+            <label for="mpesaCode" class="form-label">Enter Mpesa Code</label>
+            <input type="text" class="form-control" id="mpesaCode" placeholder="e.g., MPESA123456">
+        </div>`;
+        
+        buyModalBody.innerHTML = cartSummaryHTML;
+        
+        // Update the modal footer button to call the new function
+        const confirmButton = document.querySelector('#buyModal .modal-footer .btn-success');
+        confirmButton.setAttribute('onclick', 'confirmCartPurchase()');
+        
+        // Show the modal
+        new bootstrap.Modal(document.getElementById('buyModal')).show();
+    }
+
+    function loadProductListings(userId, roleId, filters = {}) {
+        let url = `${window.location.origin}/maizemarket/backend/product_listings.php`;
+
+        let params = new URLSearchParams();
+        if (filters.filterName) params.append("filterName", filters.filterName);
+        if (filters.filterProduct) params.append("product_id", filters.filterProduct);
+        if (filters.filterCategory) params.append("category_id", filters.filterCategory);
+        if (filters.filterPriceMin) params.append("min_price", filters.filterPriceMin);
+        if (filters.filterPriceMax) params.append("max_price", filters.filterPriceMax);
+
+        if (userId) params.append("user_id", userId);
+
+        url += `?${params.toString()}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(response => {
+                let listingsContainer = document.getElementById("productListings");
+                if (!listingsContainer) {
+                    console.error("Element with ID 'productListings' not found.");
+                    return;
+                }
+
+                listingsContainer.innerHTML = "";
+                let data = response.data;
+                // console.log("Product Listings:", JSON.stringify(data));
+                if (data.length > 0) {
+                    data.forEach(row => {
+                        listingsContainer.innerHTML += `
+                        <div class="col-md-4 mb-3">
+                            <div class="card shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">${row.product_name}</h5>
+                                    <p><strong>Quantity:</strong> ${row.quantity} ${row.unit_name}</p>
+                                    <p><strong>Price:</strong> Ksh ${parseFloat(row.price_per_quantity).toFixed(2)} per ${row.unit_name}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <button class="btn btn-success btn-sm" onclick="addToCart(${row.id}, '${row.product_name}', ${row.price_per_quantity}, '${row.unit_name}')">
+                                            <i class="fas fa-cart-plus"></i> Add to Cart
+                                        </button>
+                                        <button class="btn btn-info btn-sm" onclick="openSellerModal('${row.user_name}', '${row.user_email}', '${row.user_phone}')">
+                                            <i class="fas fa-eye"></i> Seller
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                } else {
+                    listingsContainer.innerHTML = '<p class="text-center">No products found.</p>';
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching product listings:", error);
+                let listingsContainer = document.getElementById("productListings");
+                if (listingsContainer) {
+                    listingsContainer.innerHTML = '<p class="text-center">Error loading products.</p>';
+                }
+            });
+    }
+
+    function openBuyModal(id, sellerId, productName, price, unit) {
+        document.getElementById("buyProductName").innerText = productName;
+        document.getElementById("buyProductPrice").innerText = price;
+        document.getElementById("buyProductUnit").innerText = unit;
+        document.getElementById("mpesaCode").value = ""; // Clear previous input
+        console.log("Clicked Buy Now for Listing ID:", id, "Seller ID:", sellerId); // Debugging log
+        document.getElementById("mpesaCode").setAttribute("data-listing-id", id); // Store listing ID
+        document.getElementById("mpesaCode").setAttribute("data-seller-id", sellerId); // Store seller ID
+
+        let buyModal = new bootstrap.Modal(document.getElementById("buyModal"));
+        buyModal.show();
+    }
+
+    // Function to handle single product purchase
+    function confirmPurchase() {
+        const mpesaCode = document.getElementById("mpesaCode").value.trim();
+        const quantity = parseInt(document.getElementById("quantityAmount").value);
+        const listingId = document.getElementById("mpesaCode").getAttribute("data-listing-id");
+    
+        if (!mpesaCode) {
+            Swal.fire("Error", "Please enter an Mpesa code!", "error");
+            return;
+        }
+        if (!quantity || quantity < 1) {
+            Swal.fire("Error", "Please enter a valid quantity!", "error");
+            return;
+        }
+    
+        const user = localStorage.getItem("user");
+        const userData = JSON.parse(user);
+    
+        const payload = {
+            listing_id: parseInt(listingId),
+            buyer_id: userData.id,
+            mpesa_code: mpesaCode,
+            quantity: quantity
+        };
+    
+        console.log("Sending payload:", payload);
+    
+        fetch(`${window.location.origin}/maizemarket/backend/process_purchase.php`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 200) {
+                    Swal.fire("Success", "Purchase successful!", "success").then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire("Error", data.message, "error");
+                }
+            })
+            .catch(error => {
+                console.error("Error processing purchase:", error);
+                Swal.fire("Error", "Something went wrong!", "error");
+            });
+    }
+    
+    // Function to handle cart purchase
+    function confirmCartPurchase() {
+        const mpesaCode = document.getElementById("mpesaCode").value.trim();
+        
+        if (!mpesaCode) {
+            Swal.fire({
+                icon: "error",
+                title: "Missing Information",
+                text: "Please enter an Mpesa code!"
+            });
+            return;
+        }
+        
+        const cart = JSON.parse(localStorage.getItem('cart'));
+        if (cart.length === 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "Empty Cart",
+                text: "Your cart is empty!"
+            });
+            return;
+        }
+        
+        const user = localStorage.getItem("user");
+        if (!user) {
+            Swal.fire({
+                icon: "warning",
+                title: "Session Expired",
+                text: "Please log in again."
+            }).then(() => {
+                window.location.href = "login.php";
+            });
+            return;
+        }
+        
+        const userData = JSON.parse(user);
+        
+        const payload = {
+            cart_items: cart,
+            buyer_id: userData.id,
+            mpesa_code: mpesaCode
+        };
+        
+        Swal.fire({
+            title: 'Processing Purchase',
+            text: 'Please wait while we process your order...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        fetch(`${window.location.origin}/maizemarket/backend/process_cart_purchase.php`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 200) {
+                // Clear the cart after successful purchase
+                localStorage.setItem('cart', JSON.stringify([]));
+                updateCartCount();
+                
+                let message = "Your purchase was successful!";
+                if (data.failed && data.failed.length > 0) {
+                    message += " However, some items could not be purchased. Please check the details.";
+                }
+                
+                Swal.fire({
+                    icon: "success",
+                    title: "Purchase Complete",
+                    text: message,
+                    confirmButtonText: "OK"
+                }).then(() => {
+                    // Close the modal and reload the page
+                    bootstrap.Modal.getInstance(document.getElementById('buyModal')).hide();
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Purchase Failed",
+                    text: data.message || "An error occurred while processing your purchase."
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Error processing cart purchase:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Something went wrong while processing your purchase. Please try again later."
+            });
+        });
+    }
+
+    function buyProduct(id) {
+        alert("Redirecting to purchase page for product ID: " + id);
+        // Implement the purchase functionality
+    }
+
+    function openSellerModal(name, email, phone) {
+        document.getElementById("sellerName").innerText = name;
+        document.getElementById("sellerEmail").innerText = email;
+        document.getElementById("sellerPhone").innerText = phone;
+
+        let sellerModal = new bootstrap.Modal(document.getElementById("sellerModal"));
+        sellerModal.show();
+    }
+
+    function logout() {
+        localStorage.removeItem("user");
+        window.location.href = "logout.php";
+    }
+
+</script>
+
+<?php include 'footer.php'; ?>
 </body>
 
 </html>

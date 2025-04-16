@@ -1,6 +1,4 @@
-<?php
-include 'config.php';
-?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -46,7 +44,7 @@ include 'config.php';
         <h3 class="mb-4">Your Product Listings</h3>
         <button type="button" class="btn btn-success mb-3" id="openModalBtn">+ Add Post</button>
         <div class="row" id="maizeListings">
-            <!-- 🚀 Maize Listings Load Here -->
+            <!-- 🚀  Listings Load Here -->
         </div>
     </div>
 
@@ -56,7 +54,7 @@ include 'config.php';
             <div class="modal-content">
                 <form id="addPostForm">
                     <div class="modal-header">
-                        <h5 class="modal-title">Add Maize Listing</h5>
+                        <h5 class="modal-title">Add Product Listing</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -85,7 +83,7 @@ include 'config.php';
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label>Price per unit ($)</label>
+                                <label>Price per unit (Ksh)</label>
                                 <input type="number" class="form-control" name="price_per_quantity" required>
                             </div>
                         </div>
@@ -106,7 +104,7 @@ include 'config.php';
             <div class="modal-content">
                 <form id="editPostForm">
                     <div class="modal-header">
-                        <h5 class="modal-title">Edit Maize Listing</h5>
+                        <h5 class="modal-title">Edit Product Listing</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">

@@ -12,7 +12,7 @@ if (!isset($_POST['id'], $_POST['quantity'], $_POST['quantity_unit_id'], $_POST[
     exit();
 }
 
-// Prepare the SQL query for updating a maize listing
+// Prepare the SQL query for updating a listing
 $stmt = $conn->prepare("UPDATE maize_listings SET quantity = ?, quantity_unit_id = ?, price_per_unit = ?, location = ?, need_transport = ? WHERE id = ?");
 
 // Check if the statement was prepared successfully

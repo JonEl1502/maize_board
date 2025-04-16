@@ -1,5 +1,4 @@
-<?php include 'config.php';
-include 'header.php'; // Ensure the header is included ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -18,13 +17,13 @@ include 'header.php'; // Ensure the header is included ?>
 <body>
 
     <div class="bg-light">
-        <nav class="navbar navbar-dark bg-success">
+        <nav class="navbar navbar-dark " style="background-color:rgb(49, 92, 59);">
             <div class="container">
                 <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
                 
             <div class="d-flex align-items-end">
                 <button class="btn btn-outline-light me-4" onclick="openCartModal()"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-light text-dark" id="cartCount">0</span></button> 
-                <!-- <button onclick="logout()" class="btn btn-light">Logout</button> -->
+                <!-- <button onclick="logout((" class="btn btn-light">Logout</button> -->
                 <div class="dropdown" >
                     <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                         Menu
@@ -734,7 +733,7 @@ include 'header.php'; // Ensure the header is included ?>
                 
                 let message = "Your purchase was successful!";
                 if (data.failed && data.failed.length > 0) {
-                    message += " However, some items could not be purchased. Please check the details.";
+                    message ;
                 }
                 
                 Swal.fire({
@@ -786,7 +785,7 @@ include 'header.php'; // Ensure the header is included ?>
 
 </script>
 
-<?php include 'footer.php'; ?>
+
 </body>
 
 </html>

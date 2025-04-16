@@ -1,4 +1,4 @@
-<?php include 'config.php'; ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -87,7 +87,7 @@
             <div class="row g-4">
                 <div class="col-md-3">
                     <div class="card h-100">
-                        <img src="https://images.unsplash.com/photo-1576188973526-0e5d7047b0cf?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" class="card-img-top" alt="Maize">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmbvcUpsrE8AM6lpRID4uZgH7PdfdZO7nhxg&s" class="card-img-top" alt="Maize">
                         <div class="card-body text-center">
                             <h5>Fresh Maize</h5>
                         </div>
@@ -95,7 +95,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="card h-100">
-                        <img src="https://images.unsplash.com/photo-1603197830476-26e191d4c34a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" class="card-img-top" alt="Grains">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTt-pcyzPZAODqnibwbMKeOesDAHxcBc7m517ONueOd10Vbw4I7cB4TU6Q&s" class="card-img-top" alt="Grains">
                         <div class="card-body text-center">
                             <h5>Quality Grains</h5>
                         </div>
@@ -103,7 +103,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="card h-100">
-                        <img src="https://images.unsplash.com/photo-1603197830476-26e191d4c34a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" class="card-img-top" alt="Seeds">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDVnyIRej3xHV_-kbFid6weEC38mH0qeQlzw&s" class="card-img-top" alt="Seeds">
                         <div class="card-body text-center">
                             <h5>Certified Seeds</h5>
                         </div>
@@ -111,7 +111,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="card h-100">
-                        <img src="https://images.unsplash.com/photo-1603197830476-26e191d4c34a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" class="card-img-top" alt="Feed">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPa2jRK_UTAFVqXRjOuITpg8AlUDNLJ_H_QA&s" class="card-img-top" alt="Feed">
                         <div class="card-body text-center">
                             <h5>Animal Feed</h5>
                         </div>

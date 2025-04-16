@@ -1,5 +1,4 @@
-<?php include 'config.php';
-include 'header.php'; // Ensure the header is included ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

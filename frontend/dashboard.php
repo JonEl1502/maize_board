@@ -32,7 +32,7 @@ include 'config.php';
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <li><a class="dropdown-item" href="sales.php">My Sales</a></li>
                     <li><a class="dropdown-item" href="purchases.php">My Purchases</a></li>
-                    <li><a class="dropdown-item" href="home.php">Buy</a></li>
+                    <li id="buyMenuItem"><a class="dropdown-item" href="home.php">Buy</a></li>
                     <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
                     <!-- Add more dropdown items here if needed -->
                     </ul>
@@ -219,8 +219,15 @@ include 'config.php';
             console.log("Logged in Farmer:", user);
             if (user) {
                 const userData = JSON.parse(user);
-                document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.entity_name}  (Farmer)`;
+                let entity_name = userData.entity_name??userData.name;
+                document.getElementById("welcomeMessage").innerText = `Welcome, ${entity_name}  (${userData.role})`;
                 document.getElementById("farmerId").value = userData.id;
+                
+                // Hide "Buy" menu item if user is role_id 2
+                if (userData.role_id === 2) {
+                    document.getElementById("buyMenuItem").style.display = "none";
+                }
+                
                 loadMaizeListings(userData.id);
             } else {
                 Swal.fire({

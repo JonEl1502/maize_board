@@ -23,10 +23,18 @@ include 'header.php'; // Ensure the header is included ?>
                 <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
                 
             <div class="d-flex align-items-end">
-                <!-- <button onclick="window.history.back()" class="btn btn-outline-light me-4"><i class="fas fa-arrow-left"></i> Back</button>
-                <a class="btn btn-outline-light me-4" href="sales.php">Sales & Purchases</a>-->
                 <button class="btn btn-outline-light me-4" onclick="openCartModal()"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-light text-dark" id="cartCount">0</span></button> 
-                <button onclick="logout()" class="btn btn-light">Logout</button>
+                <!-- <button onclick="logout()" class="btn btn-light">Logout</button> -->
+                <div class="dropdown ms-4" id="menuItem">
+                    <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        Menu
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li> <a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
+                    <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
+                    <!-- Add more dropdown items here if needed -->
+                    </ul>
+                </div>
             </div>
             </div>
         </nav>
@@ -335,11 +343,17 @@ include 'header.php'; // Ensure the header is included ?>
         console.log("Logged in :", user);
         if (user) {
             const userData = JSON.parse(user);
-            console.log(`Logged IDD :${userData.name} `);
-            if(userData.role_id === 5){
+            document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.entity_name}  (${userData.role})`;
+           
+            console.log(`Logged IDD  ed:${userData.name} ${userData.role_id}`);
+            if(userData.role_id >= 3){
                 document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.name}  (${userData.role})`;
             }
-            document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.entity_name}  (${userData.role})`;
+            
+            if (userData.role_id >= 4) {
+                    document.getElementById("menuItem").style.display = "none";
+            }
+
             if (userData.role_id === 2) {
                 document.getElementById("title_name").innerText = "My Product Listings";
             }

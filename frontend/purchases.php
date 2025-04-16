@@ -38,11 +38,11 @@
                         Menu
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
                     <li><a class="dropdown-item" href="sales.php">My Sales</a></li>
-                    <li><a class="dropdown-item" href="purchases.php">My Purchases</a></li>
-                        <li><a class="dropdown-item" href="home.php">Buy</a></li>
-                        <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
-                        <!-- Add more dropdown items here if needed -->
+                    <li id="buyMenuItem"><a class="dropdown-item" href="home.php">Buy</a></li>
+                    <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
+                    <!-- Add more dropdown items here if needed -->
                     </ul>
                 </div>
                 <!-- <button onclick="logout()" class="btn btn-light">Logout</button> -->
@@ -143,7 +143,14 @@
             const user = localStorage.getItem('user');
             if (user) {
                 const userData = JSON.parse(user);
-                document.getElementById('welcomeMessage').innerText = `Welcome, ${userData.name}`;
+                let entity_name = userData.entity_name??userData.name;
+                document.getElementById("welcomeMessage").innerText = `Welcome, ${entity_name}  (${userData.role})`;
+                
+                // document.getElementById('welcomeMessage').innerText = `Welcome, ${userData.name}`;
+                console.log("rrr:",JSON.stringify(userData));
+                if (userData.role_id === 2) {
+                    document.getElementById("buyMenuItem").style.display = "none";
+                }
                 loadPurchases(userData.id);
             } else {
                 window.location.href = 'login.php';

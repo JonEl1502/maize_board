@@ -44,6 +44,7 @@
 
                 <div class="text-center mt-4">
                     <p>Don't have an account? <a href="signup.php" class="text-success">Register here</a></p>
+                    <a href="index.php" class="btn btn-outline-secondary mt-2">&larr; Back to Home</a>
                 </div>
             </div>
         </div>

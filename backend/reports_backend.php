@@ -21,19 +21,22 @@ try {
         'recent_transactions' => []
     ];
 
-    // Base query for transactions
-    $base_query = "FROM transactions t 
-                   JOIN products p ON t.product_id = p.id
-                   JOIN quantity_types qu ON p.unit_id = qu.id
-                   JOIN statuses s ON t.id = s.id";
+    // Base query for purchases
+    $base_query = "FROM purchases p 
+                   LEFT JOIN product_listings pl ON p.listing_id = pl.id
+                   LEFT JOIN products pr ON pl.product_id = pr.id
+                   LEFT JOIN quantity_types qu ON pl.quantity_type_id = qu.id
+                   LEFT JOIN statuses s ON pl.status_id = s.id
+                   LEFT JOIN users u ON p.seller_id = u.id
+                   LEFT JOIN users b ON p.buyer_id = b.id";
 
     // Role-specific conditions
     if ($role_id == 1) {
         $role_condition = "1=1"; // Admin can view all transactions
     } elseif ($role_id == 2) {
-        $role_condition = "t.seller_id = $user_id"; // Role 2 condition
+        $role_condition = "p.seller_id = $user_id"; // Seller - show sales
     } elseif ($role_id == 3) {
-        $role_condition = "t.buyer_id = $user_id"; // Role 3 condition
+        $role_condition = "p.buyer_id = $user_id"; // Buyer - show purchases
     } else {
         echo json_encode(['status' => 403, 'message' => 'Unauthorized access']);
         exit;
@@ -42,8 +45,8 @@ try {
     // Get summary data
     $summary_query = "SELECT 
                         COUNT(*) as total_transactions,
-                        SUM(amount) as total_amount,
-                        ROUND(COUNT(CASE WHEN id = 2 THEN 1 END) * 100.0 / COUNT(*), 1) as success_rate
+                        SUM(p.quantity * pl.price_per_quantity) as total_amount,
+                        ROUND(COUNT(CASE WHEN s.id = 2 THEN 1 END) * 100.0 / COUNT(*), 1) as success_rate
                       $base_query
                       WHERE $role_condition";
 
@@ -58,12 +61,12 @@ try {
 
     // Get transaction history (last 7 days)
     $history_query = "SELECT 
-                        DATE(t.created_at) as date,
-                        SUM(amount) as amount
+                        DATE(p.created_at) as date,
+                        SUM(p.quantity * pl.price_per_quantity) as amount
                       $base_query
                       WHERE $role_condition
-                        AND t.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-                      GROUP BY DATE(t.created_at)
+                        AND p.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                      GROUP BY DATE(p.created_at)
                       ORDER BY date";
 
     $history_result = $conn->query($history_query);
@@ -89,15 +92,15 @@ try {
 
     // Get recent transactions
     $recent_query = "SELECT 
-                       t.created_at as date,
-                       p.name as product_name,
-                       t.quantity,
-                       qu.name as unit_name,
-                       t.total_price as amount,
+                       p.created_at as date,
+                       pr.name as product_name,
+                       p.quantity,
+                       qu.unit_name as unit_name,
+                       (p.quantity * pl.price_per_quantity) as amount,
                        s.name as status
                      $base_query
                      WHERE $role_condition
-                     ORDER BY t.created_at DESC
+                     ORDER BY p.created_at DESC
                      LIMIT 10";
 
     $recent_result = $conn->query($recent_query);

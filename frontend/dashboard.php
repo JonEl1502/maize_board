@@ -32,6 +32,7 @@ include 'config.php';
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <li><a class="dropdown-item" href="sales.php">My Sales</a></li>
                     <li><a class="dropdown-item" href="purchases.php">My Purchases</a></li>
+                    <li><a class="dropdown-item" href="reports.php">Reports</a></li>
                     <li id="buyMenuItem"><a class="dropdown-item" href="home.php">Buy</a></li>
                     <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
                     <!-- Add more dropdown items here if needed -->

@@ -25,12 +25,13 @@ include 'header.php'; // Ensure the header is included ?>
             <div class="d-flex align-items-end">
                 <button class="btn btn-outline-light me-4" onclick="openCartModal()"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-light text-dark" id="cartCount">0</span></button> 
                 <!-- <button onclick="logout()" class="btn btn-light">Logout</button> -->
-                <div class="dropdown ms-4" id="menuItem">
+                <div class="dropdown" >
                     <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                         Menu
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <li> <a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
+                    <li id="menuItem"> <a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
+                    <!-- <li id="menuItem"> <a class="dropdown-item" href="purchases.php">My p</a></li> -->
                     <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
                     <!-- Add more dropdown items here if needed -->
                     </ul>

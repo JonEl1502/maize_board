@@ -25,7 +25,25 @@
 </head>
 
 <body class="bg-light">
-        <?php include 'components/header.php'; ?>
+      
+    <nav class="navbar navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand me-4" href="#" id="welcomeMessage">Loading...</a>
+
+            <div class="d-flex align-items-end">
+                <!-- <a class="btn btn-outline-light me-4" href="home.php">Home</a> -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        Menu
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
+                    <!-- Add more dropdown items here if needed -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
 
     <div class="container mt-5">
         <h2 class="mb-4" id="reportTitle">Loading...</h2>

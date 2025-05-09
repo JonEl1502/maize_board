@@ -6,12 +6,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Listings</title>
+    <title>E-commerce Marketplace</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Include SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .product-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .product-img {
+            height: 180px;
+            object-fit: cover;
+        }
+        .category-filter {
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 20px;
+            padding: 8px 15px;
+        }
+        .category-filter:hover, .category-filter.active {
+            background-color: #198754;
+            color: white;
+        }
+    </style>
 </head>
 
 <body>
@@ -20,9 +44,9 @@
         <nav class="navbar navbar-dark " style="background-color:rgb(49, 92, 59);">
             <div class="container">
                 <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
-                
+
             <div class="d-flex align-items-end">
-                <button class="btn btn-outline-light me-4" onclick="openCartModal()"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-light text-dark" id="cartCount">0</span></button> 
+                <button class="btn btn-outline-light me-4" onclick="openCartModal()"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-light text-dark" id="cartCount">0</span></button>
                 <!-- <button onclick="logout((" class="btn btn-light">Logout</button> -->
                 <div class="dropdown" >
                     <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
@@ -30,11 +54,11 @@
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <li id="menuItem"> <a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
-                    <!-- <li id="menuItem"> <a class="dropdown-item" href="purchases.php">My p</a></li> -->
+                    <li><a class="dropdown-item" href="purchases.php">My Purchases</a></li>
                     <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
-                    <!-- Add more dropdown items here if needed -->
                     </ul>
                 </div>
+                <a href="index.php" class="btn btn-outline-light"><i class="fas fa-arrow-left"></i> Back to Home</a>
             </div>
             </div>
         </nav>
@@ -88,7 +112,7 @@
     <script>
         // Cart Management
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        
+
         function updateCartCount() {
             document.getElementById('cartCount').textContent = cart.length;
         }
@@ -143,7 +167,7 @@
             }
 
             let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Total</th><th>Action</th></tr></thead><tbody>';
-            
+
             cart.forEach((item, index) => {
                 total += item.total;
                 html += `
@@ -151,8 +175,8 @@
                         <td>${item.name}</td>
                         <td>Ksh ${item.price.toFixed(2)} per ${item.unit}</td>
                         <td>
-                            <input type="number" min="1" value="${item.quantity}" 
-                                class="form-control form-control-sm w-75" 
+                            <input type="number" min="1" value="${item.quantity}"
+                                class="form-control form-control-sm w-75"
                                 onchange="updateQuantity(${index}, this.value)">
                         </td>
                         <td>Ksh ${item.total.toFixed(2)}</td>
@@ -344,12 +368,12 @@
         if (user) {
             const userData = JSON.parse(user);
             document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.entity_name}  (${userData.role})`;
-           
+
             console.log(`Logged IDD  ed:${userData.name} ${userData.role_id}`);
             if(userData.role_id >= 3){
                 document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.name}  (${userData.role})`;
             }
-            
+
             if (userData.role_id >= 4) {
                     document.getElementById("menuItem").style.display = "none";
             }
@@ -450,7 +474,7 @@
             document.getElementById('cartTotal').textContent = '0.00';
         } else {
             let html = '<div class="table-responsive"><table class="table"><thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Total</th><th>Actions</th></tr></thead><tbody>';
-            
+
             cart.forEach((item, index) => {
                 const itemTotal = item.price * item.quantity;
                 total += itemTotal;
@@ -512,7 +536,7 @@
         // Update the buy modal to show cart summary
         const buyModalBody = document.querySelector('#buyModal .modal-body');
         let cartSummaryHTML = '<h5>Cart Summary</h5><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Product</th><th>Quantity</th><th>Price</th><th>Total</th></tr></thead><tbody>';
-        
+
         let grandTotal = 0;
         cart.forEach(item => {
             const itemTotal = item.price * item.quantity;
@@ -526,7 +550,7 @@
                 </tr>
             `;
         });
-        
+
         cartSummaryHTML += `</tbody></table></div>
         <div class="text-end mb-3">
             <h5>Grand Total: Ksh ${grandTotal.toFixed(2)}</h5>
@@ -535,13 +559,13 @@
             <label for="mpesaCode" class="form-label">Enter Mpesa Code</label>
             <input type="text" class="form-control" id="mpesaCode" placeholder="e.g., MPESA123456">
         </div>`;
-        
+
         buyModalBody.innerHTML = cartSummaryHTML;
-        
+
         // Update the modal footer button to call the new function
         const confirmButton = document.querySelector('#buyModal .modal-footer .btn-success');
         confirmButton.setAttribute('onclick', 'confirmCartPurchase()');
-        
+
         // Show the modal
         new bootstrap.Modal(document.getElementById('buyModal')).show();
     }
@@ -624,7 +648,7 @@
         const mpesaCode = document.getElementById("mpesaCode").value.trim();
         const quantity = parseInt(document.getElementById("quantityAmount").value);
         const listingId = document.getElementById("mpesaCode").getAttribute("data-listing-id");
-    
+
         if (!mpesaCode) {
             Swal.fire("Error", "Please enter an Mpesa code!", "error");
             return;
@@ -633,19 +657,19 @@
             Swal.fire("Error", "Please enter a valid quantity!", "error");
             return;
         }
-    
+
         const user = localStorage.getItem("user");
         const userData = JSON.parse(user);
-    
+
         const payload = {
             listing_id: parseInt(listingId),
             buyer_id: userData.id,
             mpesa_code: mpesaCode,
             quantity: quantity
         };
-    
+
         console.log("Sending payload:", payload);
-    
+
         fetch(`${window.location.origin}/maizemarket/backend/process_purchase.php`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -666,11 +690,11 @@
                 Swal.fire("Error", "Something went wrong!", "error");
             });
     }
-    
+
     // Function to handle cart purchase
     function confirmCartPurchase() {
         const mpesaCode = document.getElementById("mpesaCode").value.trim();
-        
+
         if (!mpesaCode) {
             Swal.fire({
                 icon: "error",
@@ -679,7 +703,7 @@
             });
             return;
         }
-        
+
         const cart = JSON.parse(localStorage.getItem('cart'));
         if (cart.length === 0) {
             Swal.fire({
@@ -689,7 +713,7 @@
             });
             return;
         }
-        
+
         const user = localStorage.getItem("user");
         if (!user) {
             Swal.fire({
@@ -701,15 +725,15 @@
             });
             return;
         }
-        
+
         const userData = JSON.parse(user);
-        
+
         const payload = {
             cart_items: cart,
             buyer_id: userData.id,
             mpesa_code: mpesaCode
         };
-        
+
         Swal.fire({
             title: 'Processing Purchase',
             text: 'Please wait while we process your order...',
@@ -718,7 +742,7 @@
                 Swal.showLoading();
             }
         });
-        
+
         fetch(`${window.location.origin}/maizemarket/backend/process_cart_purchase.php`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -730,12 +754,12 @@
                 // Clear the cart after successful purchase
                 localStorage.setItem('cart', JSON.stringify([]));
                 updateCartCount();
-                
+
                 let message = "Your purchase was successful!";
                 if (data.failed && data.failed.length > 0) {
                     message ;
                 }
-                
+
                 Swal.fire({
                     icon: "success",
                     title: "Purchase Complete",

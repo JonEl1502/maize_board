@@ -22,7 +22,6 @@
             <a class="navbar-brand me-4" href="#" id="welcomeMessage">Loading...</a>
 
             <div class="d-flex align-items-end">
-                <!-- <a class="btn btn-outline-light me-4" href="home.php">Home</a> -->
                 <div class="dropdown">
                     <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                         Menu
@@ -33,9 +32,9 @@
                     <li><a class="dropdown-item" href="reports.php">Reports</a></li>
                     <li id="buyMenuItem"><a class="dropdown-item" href="home.php">Buy</a></li>
                     <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
-                    <!-- Add more dropdown items here if needed -->
                     </ul>
                 </div>
+                <a href="home.php" class="btn btn-outline-light me-2"><i class="fas fa-arrow-left"></i> Back to Home</a>
             </div>
         </div>
     </nav>
@@ -221,12 +220,12 @@
                 let entity_name = userData.entity_name??userData.name;
                 document.getElementById("welcomeMessage").innerText = `Welcome, ${entity_name}  (${userData.role})`;
                 document.getElementById("farmerId").value = userData.id;
-                
+
                 // Hide "Buy" menu item if user is role_id 2
                 if (userData.role_id === 2) {
                     document.getElementById("buyMenuItem").style.display = "none";
                 }
-                
+
                 loadMaizeListings(userData.id);
             } else {
                 Swal.fire({
@@ -276,11 +275,11 @@
                             <p><strong>Listed On:</strong> ${new Date(product.created_at).toLocaleDateString()}</p>
                             ${product.product_image_url ? `<img src="${product.product_image_url}" class="img-fluid mb-2" alt="Product Image">` : ''}
                             <div class="d-flex justify-content-between">
-                                <button class="btn btn-primary" 
+                                <button class="btn btn-primary"
                                     onclick='openEditModal(${JSON.stringify(product)})'>
                                     Update
                                 </button>
-                                <button class="btn btn-danger" 
+                                <button class="btn btn-danger"
                                     onclick="deleteProduct(${product.id})">
                                     Delete
                                 </button>

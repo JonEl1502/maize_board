@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        .card { 
+        .card {
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             transition: transform 0.3s;
         }
@@ -31,8 +31,6 @@
         <div class="container">
             <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
             <div class="d-flex align-items-end">
-                <!-- <a class="btn btn-outline-light me-2" href="sales.php">My Sales</a> -->
-                <!-- <a class="btn btn-outline-light me-2" href="home.php">Home</a> -->
                 <div class="dropdown">
                     <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                         Menu
@@ -42,10 +40,9 @@
                     <li><a class="dropdown-item" href="sales.php">My Sales</a></li>
                     <li id="buyMenuItem"><a class="dropdown-item" href="home.php">Buy</a></li>
                     <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
-                    <!-- Add more dropdown items here if needed -->
                     </ul>
                 </div>
-                <!-- <button onclick="logout()" class="btn btn-light">Logout</button> -->
+                <a href="dashboard.php" class="btn btn-outline-light"><i class="fas fa-arrow-left"></i> Back</a>
             </div>
         </div>
     </nav>
@@ -73,7 +70,7 @@
                 .then(response => response.json())
                 .then(data => {
                     const container = document.getElementById('purchasesListings');
-                    
+
                     if (data.status !== 200 || !data.data || data.data.length === 0) {
                         container.innerHTML = `<div class="col-12 text-center"><p class="text-muted">No purchases found</p></div>`;
                         return;
@@ -103,7 +100,7 @@
                 })
                 .catch(error => {
                     console.error('Error loading purchases:', error);
-                    document.getElementById('purchasesListings').innerHTML = 
+                    document.getElementById('purchasesListings').innerHTML =
                         `<div class="col-12 text-center"><p class="text-danger">Error loading purchases</p></div>`;
                 });
         }
@@ -113,7 +110,7 @@
             const buttons = document.querySelectorAll('.btn-group .btn');
             buttons.forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            
+
             const userData = JSON.parse(localStorage.getItem('user'));
             if (userData) {
                 loadPurchases(userData.id);
@@ -145,7 +142,7 @@
                 const userData = JSON.parse(user);
                 let entity_name = userData.entity_name??userData.name;
                 document.getElementById("welcomeMessage").innerText = `Welcome, ${entity_name}  (${userData.role})`;
-                
+
                 // document.getElementById('welcomeMessage').innerText = `Welcome, ${userData.name}`;
                 console.log("rrr:",JSON.stringify(userData));
                 if (userData.role_id === 2) {

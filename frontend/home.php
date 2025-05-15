@@ -494,7 +494,15 @@
         const filterPriceMin = document.getElementById("filterPriceMin").value;
         const filterPriceMax = document.getElementById("filterPriceMax").value;
 
-        loadProductListings(null, null, { filterName, filterProduct, filterCategory, filterPriceMin, filterPriceMax });
+        // Get the user data to pass the user ID
+        const user = localStorage.getItem('user');
+        let userId = null;
+        if (user) {
+            const userData = JSON.parse(user);
+            userId = userData.id;
+        }
+
+        loadProductListings(userId, null, { filterName, filterProduct, filterCategory, filterPriceMin, filterPriceMax });
     });
 
     function addToCart(productId, productName, price, unit) {
@@ -659,8 +667,8 @@
 
         if (userId) {
             params.append("user_id", userId);
-            // Add buyer_id parameter to prevent users from seeing their own products
-            params.append("buyer_id", userId);
+            // We no longer add buyer_id parameter to allow users to see their own products
+            // The "Add to Cart" button will be disabled for their own products in the UI
         }
 
         url += `?${params.toString()}`;
@@ -706,19 +714,31 @@
                             }
                         }
 
+                        // Check if this product belongs to the current user
+                        const isOwnProduct = row.seller_id == userData.id;
+
                         listingsContainer.innerHTML += `
                         <div class="col-md-4 mb-3">
-                            <div class="card shadow-sm">
+                            <div class="card shadow-sm ${isOwnProduct ? 'border-primary' : ''}">
                                 <div class="card-body">
-                                    <h5 class="card-title">${row.product_name} ${isDerived ? '<span class="badge bg-info">Derived</span>' : ''}</h5>
+                                    <h5 class="card-title">
+                                        ${row.product_name}
+                                        ${isDerived ? '<span class="badge bg-info">Derived</span>' : ''}
+                                        ${isOwnProduct ? '<span class="badge bg-primary">Your Product</span>' : ''}
+                                    </h5>
                                     <p class="small text-muted">${row.product_description || 'No description available'}</p>
                                     <p><strong>Quantity:</strong> ${row.quantity} ${row.unit_name}</p>
                                     <p><strong>Price:</strong> Ksh ${parseFloat(row.price_per_quantity).toFixed(2)} per ${row.unit_name}</p>
                                     ${sourceMaterialsHtml}
                                     <div class="d-flex justify-content-between align-items-center mt-3">
-                                        <button class="btn btn-success btn-sm" onclick="addToCart(${row.id}, '${row.product_name}', ${row.price_per_quantity}, '${row.unit_name}')">
-                                            <i class="fas fa-cart-plus"></i> Add to Cart
-                                        </button>
+                                        ${isOwnProduct ?
+                                            `<button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="fas fa-cart-plus"></i> Your Product
+                                            </button>` :
+                                            `<button class="btn btn-success btn-sm" onclick="addToCart(${row.id}, '${row.product_name}', ${row.price_per_quantity}, '${row.unit_name}')">
+                                                <i class="fas fa-cart-plus"></i> Add to Cart
+                                            </button>`
+                                        }
                                         <button class="btn btn-info btn-sm" onclick="openSellerModal('${row.user_name}', '${row.user_email}', '${row.user_phone}')">
                                             <i class="fas fa-eye"></i> Seller
                                         </button>

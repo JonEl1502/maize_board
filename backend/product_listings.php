@@ -89,12 +89,9 @@ if ($quantity_type_id !== null) {
     $types .= "i";
 }
 
-// Prevent users from seeing their own products when they are buying
-if ($buyer_id !== null) {
-    $query .= " AND pl.seller_id != ?";
-    $params[] = $buyer_id;
-    $types .= "i";
-}
+// We no longer prevent users from seeing their own products
+// Instead, we'll handle this in the frontend by disabling the "Add to Cart" button
+// for products where seller_id == buyer_id
 
 $product_name = isset($_GET['filterName']) ? trim($_GET['filterName']) : null;
 

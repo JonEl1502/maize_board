@@ -715,7 +715,7 @@
                         }
 
                         // Check if this product belongs to the current user
-                        const isOwnProduct = row.seller_id == userData.id;
+                        const isOwnProduct = userId && row.seller_id == userId;
 
                         listingsContainer.innerHTML += `
                         <div class="col-md-4 mb-3">

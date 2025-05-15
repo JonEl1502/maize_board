@@ -14,14 +14,14 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     exit();
 }
 
-if (!isset($data['cart_items']) || !isset($data['mpesa_code']) || !isset($data['buyer_id']) || empty($data['mpesa_code'])) {
-    echo json_encode(["status" => 400, "message" => "Invalid request. Cart items, Buyer ID, and Mpesa code are required."]);
+if (!isset($data['cart_items']) || !isset($data['payment_reference']) || !isset($data['buyer_id']) || empty($data['payment_reference'])) {
+    echo json_encode(["status" => 400, "message" => "Invalid request. Cart items, Buyer ID, and Payment Reference are required."]);
     exit();
 }
 
 $cart_items = $data['cart_items'];
 $buyer_id = intval($data['buyer_id']);
-$mpesa_code = trim($data['mpesa_code']);
+$payment_reference = trim($data['payment_reference']);
 
 // Validate buyer_id exists in the users table
 $checkBuyerStmt = $conn->prepare("SELECT id FROM users WHERE id = ?");
@@ -98,21 +98,22 @@ try {
         $total_price = $quantity * $listing['price_per_quantity'];
 
         // Update product status and quantity (single update)
-        $updateQuery = "UPDATE product_listings SET status_id = IF(quantity - ? = 0, 3, 1), buyer_id = IF(quantity - ? = 0, ?, NULL), quantity = quantity - ? WHERE id = ?";
+        // Set status to 3 (Paid) since payment reference is provided
+        $updateQuery = "UPDATE product_listings SET status_id = 3, buyer_id = ?, quantity = quantity - ? WHERE id = ?";
         $updateStmt = $conn->prepare($updateQuery);
         if (!$updateStmt) {
             throw new Exception("Error updating status: " . $conn->error);
         }
-        $updateStmt->bind_param("iiiii", $quantity, $quantity, $buyer_id, $quantity, $listing_id);
+        $updateStmt->bind_param("iii", $buyer_id, $quantity, $listing_id);
         $updateStmt->execute();
 
         // Insert purchase transaction
-        $insertQuery = "INSERT INTO purchases (listing_id, buyer_id, seller_id, mpesa_code, quantity, total_price, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())";
+        $insertQuery = "INSERT INTO purchases (listing_id, buyer_id, seller_id, payment_reference, quantity, total_price, status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'paid', NOW())";
         $insertStmt = $conn->prepare($insertQuery);
         if (!$insertStmt) {
             throw new Exception("Error inserting purchase: " . $conn->error);
         }
-        $insertStmt->bind_param("iiisid", $listing_id, $buyer_id, $seller_id, $mpesa_code, $quantity, $total_price);
+        $insertStmt->bind_param("iiisid", $listing_id, $buyer_id, $seller_id, $payment_reference, $quantity, $total_price);
         $insertStmt->execute();
 
         $successful_purchases[] = ["productId" => $listing_id, "quantity" => $quantity, "total" => $total_price];

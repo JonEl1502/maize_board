@@ -52,7 +52,7 @@ try {
     }
 
     $user = $userResult->fetch_assoc();
-    if ($user['role_id'] !== 2) { // Assuming role_id 2 is for wholesalers
+    if ($user['role_id'] !== 3) { // Role ID 3 is for wholesalers
         throw new Exception("Only wholesalers can create derived products");
     }
 
@@ -61,7 +61,7 @@ try {
     $checkProductStmt = $conn->prepare($checkProductQuery);
     $checkProductStmt->bind_param("s", $product_name);
     $checkProductStmt->execute();
-    
+
     if ($checkProductStmt->get_result()->num_rows > 0) {
         throw new Exception("A product with this name already exists");
     }
@@ -70,22 +70,22 @@ try {
     $insertProductQuery = "INSERT INTO products (name, description, image_url, is_derived, created_by, category_id) VALUES (?, ?, ?, 1, ?, ?)";
     $insertProductStmt = $conn->prepare($insertProductQuery);
     $insertProductStmt->bind_param("sssii", $product_name, $description, $image_url, $wholesaler_id, $category_id);
-    
+
     if (!$insertProductStmt->execute()) {
         throw new Exception("Failed to create product: " . $insertProductStmt->error);
     }
-    
+
     $product_id = $conn->insert_id;
 
     // Insert the derived product record
     $insertDerivedQuery = "INSERT INTO derived_products (product_id, wholesaler_id, description, processing_method) VALUES (?, ?, ?, ?)";
     $insertDerivedStmt = $conn->prepare($insertDerivedQuery);
     $insertDerivedStmt->bind_param("iiss", $product_id, $wholesaler_id, $description, $processing_method);
-    
+
     if (!$insertDerivedStmt->execute()) {
         throw new Exception("Failed to create derived product: " . $insertDerivedStmt->error);
     }
-    
+
     $derived_product_id = $conn->insert_id;
 
     // Process each material
@@ -105,19 +105,19 @@ try {
                                JOIN product_listings pl ON p.listing_id = pl.id
                                WHERE p.buyer_id = ? AND pl.product_id = ? AND pl.quantity_type_id = ?
                                GROUP BY pl.quantity_type_id";
-        
+
         $checkInventoryStmt = $conn->prepare($checkInventoryQuery);
         $checkInventoryStmt->bind_param("iii", $wholesaler_id, $source_product_id, $quantity_type_id);
         $checkInventoryStmt->execute();
         $inventoryResult = $checkInventoryStmt->get_result();
-        
+
         if ($inventoryResult->num_rows === 0) {
             throw new Exception("You don't have any of this material in your inventory");
         }
-        
+
         $inventory = $inventoryResult->fetch_assoc();
         $total_purchased = floatval($inventory['total_purchased']);
-        
+
         // Check if the wholesaler has enough of this material
         if ($total_purchased < $quantity_used) {
             throw new Exception("Not enough material available. You have $total_purchased but need $quantity_used");
@@ -127,7 +127,7 @@ try {
         $insertMaterialQuery = "INSERT INTO product_materials (derived_product_id, source_product_id, quantity_used, quantity_type_id) VALUES (?, ?, ?, ?)";
         $insertMaterialStmt = $conn->prepare($insertMaterialQuery);
         $insertMaterialStmt->bind_param("iidd", $derived_product_id, $source_product_id, $quantity_used, $quantity_type_id);
-        
+
         if (!$insertMaterialStmt->execute()) {
             throw new Exception("Failed to add material: " . $insertMaterialStmt->error);
         }

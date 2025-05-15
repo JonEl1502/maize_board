@@ -332,8 +332,8 @@
                     <input type="number" class="form-control" id="quantityAmount" min="1" placeholder="Enter quantity">
                 </div>
                 <div class="mb-3">
-                    <label for="mpesaCode" class="form-label">Enter Mpesa Code</label>
-                    <input type="text" class="form-control" id="mpesaCode" placeholder="e.g., MPESA123456">
+                    <label for="paymentReference" class="form-label">Enter Payment Reference</label>
+                    <input type="text" class="form-control" id="paymentReference" placeholder="e.g., MPESA123456">
                 </div>
             </div>
             <div class="modal-footer">
@@ -584,18 +584,24 @@
             <h5>Grand Total: Ksh ${grandTotal.toFixed(2)}</h5>
         </div>
         <div class="mb-3">
-            <label for="mpesaCode" class="form-label">Enter Mpesa Code</label>
-            <input type="text" class="form-control" id="mpesaCode" placeholder="e.g., MPESA123456">
+            <label for="paymentReference" class="form-label">Enter Payment Reference</label>
+            <input type="text" class="form-control" id="paymentReference" placeholder="e.g., MPESA123456">
         </div>`;
 
         buyModalBody.innerHTML = cartSummaryHTML;
 
-        // Update the modal footer button to call the new function
+        // Update the modal footer button to call the new function with a small delay
         const confirmButton = document.querySelector('#buyModal .modal-footer .btn-success');
-        confirmButton.setAttribute('onclick', 'confirmCartPurchase()');
+        confirmButton.onclick = function() {
+            // Small delay to ensure the modal is fully rendered
+            setTimeout(confirmCartPurchase, 100);
+        };
 
         // Show the modal
         new bootstrap.Modal(document.getElementById('buyModal')).show();
+
+        // Verify that the payment reference input was created
+        console.log("Payment reference input created:", document.getElementById('paymentReference') !== null);
     }
 
     function loadProductListings(userId, roleId, filters = {}) {
@@ -695,10 +701,10 @@
         document.getElementById("buyProductName").innerText = productName;
         document.getElementById("buyProductPrice").innerText = price;
         document.getElementById("buyProductUnit").innerText = unit;
-        document.getElementById("mpesaCode").value = ""; // Clear previous input
+        document.getElementById("paymentReference").value = ""; // Clear previous input
         console.log("Clicked Buy Now for Listing ID:", id, "Seller ID:", sellerId); // Debugging log
-        document.getElementById("mpesaCode").setAttribute("data-listing-id", id); // Store listing ID
-        document.getElementById("mpesaCode").setAttribute("data-seller-id", sellerId); // Store seller ID
+        document.getElementById("paymentReference").setAttribute("data-listing-id", id); // Store listing ID
+        document.getElementById("paymentReference").setAttribute("data-seller-id", sellerId); // Store seller ID
 
         let buyModal = new bootstrap.Modal(document.getElementById("buyModal"));
         buyModal.show();
@@ -706,12 +712,36 @@
 
     // Function to handle single product purchase
     function confirmPurchase() {
-        const mpesaCode = document.getElementById("mpesaCode").value.trim();
-        const quantity = parseInt(document.getElementById("quantityAmount").value);
-        const listingId = document.getElementById("mpesaCode").getAttribute("data-listing-id");
+        const paymentReferenceElement = document.getElementById("paymentReference");
+        const quantityElement = document.getElementById("quantityAmount");
 
-        if (!mpesaCode) {
-            Swal.fire("Error", "Please enter an Mpesa code!", "error");
+        // Check if elements exist before trying to access their values
+        if (!paymentReferenceElement) {
+            console.error("Payment reference input element not found");
+            Swal.fire({
+                icon: "error",
+                title: "System Error",
+                text: "Could not find payment reference field. Please try again."
+            });
+            return;
+        }
+
+        if (!quantityElement) {
+            console.error("Quantity input element not found");
+            Swal.fire({
+                icon: "error",
+                title: "System Error",
+                text: "Could not find quantity field. Please try again."
+            });
+            return;
+        }
+
+        const paymentReference = paymentReferenceElement.value.trim();
+        const quantity = parseInt(quantityElement.value);
+        const listingId = paymentReferenceElement.getAttribute("data-listing-id");
+
+        if (!paymentReference) {
+            Swal.fire("Error", "Please enter a Payment Reference!", "error");
             return;
         }
         if (!quantity || quantity < 1) {
@@ -725,7 +755,7 @@
         const payload = {
             listing_id: parseInt(listingId),
             buyer_id: userData.id,
-            mpesa_code: mpesaCode,
+            payment_reference: paymentReference,
             quantity: quantity
         };
 
@@ -754,13 +784,26 @@
 
     // Function to handle cart purchase
     function confirmCartPurchase() {
-        const mpesaCode = document.getElementById("mpesaCode").value.trim();
+        const paymentReferenceElement = document.getElementById("paymentReference");
 
-        if (!mpesaCode) {
+        // Check if the element exists before trying to access its value
+        if (!paymentReferenceElement) {
+            console.error("Payment reference input element not found");
+            Swal.fire({
+                icon: "error",
+                title: "System Error",
+                text: "Could not find payment reference field. Please try again."
+            });
+            return;
+        }
+
+        const paymentReference = paymentReferenceElement.value.trim();
+
+        if (!paymentReference) {
             Swal.fire({
                 icon: "error",
                 title: "Missing Information",
-                text: "Please enter an Mpesa code!"
+                text: "Please enter a Payment Reference!"
             });
             return;
         }
@@ -792,7 +835,7 @@
         const payload = {
             cart_items: cart,
             buyer_id: userData.id,
-            mpesa_code: mpesaCode
+            payment_reference: paymentReference
         };
 
         Swal.fire({
@@ -818,7 +861,7 @@
 
                 let message = "Your purchase was successful!";
                 if (data.failed && data.failed.length > 0) {
-                    message ;
+                    message += " However, some items could not be purchased.";
                 }
 
                 Swal.fire({

@@ -305,6 +305,7 @@ INSERT INTO `roles` (`id`, `name`, `description`) VALUES
 CREATE TABLE `statuses` (
   `id` int(11) NOT NULL,
   `name` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -312,11 +313,13 @@ CREATE TABLE `statuses` (
 -- Dumping data for table `statuses`
 --
 
-INSERT INTO `statuses` (`id`, `name`, `created_at`) VALUES
-(1, 'Listed', '2025-03-22 12:47:50'),
-(2, 'Spoken For', '2025-03-22 12:47:50'),
-(3, 'Paid For', '2025-03-22 12:47:50'),
-(4, 'Sold', '2025-03-22 12:47:50');
+INSERT INTO `statuses` (`id`, `name`, `description`, `created_at`) VALUES
+(1, 'Listed', 'Product is available for purchase', '2025-03-22 12:47:50'),
+(2, 'Pending Payment', 'Buyer has initiated purchase but payment not yet confirmed', '2025-03-22 12:47:50'),
+(3, 'Paid', 'Payment has been received and confirmed by system', '2025-03-22 12:47:50'),
+(4, 'Completed', 'Seller has confirmed delivery and transaction is complete', '2025-03-22 12:47:50'),
+(5, 'Cancelled', 'Transaction was cancelled', '2025-03-22 12:47:50'),
+(6, 'Refunded', 'Payment was refunded to buyer', '2025-03-22 12:47:50');
 
 -- --------------------------------------------------------
 
@@ -595,7 +598,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `statuses`
 --
 ALTER TABLE `statuses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `transactions`
@@ -706,12 +709,12 @@ ALTER TABLE `report_executions`
   ADD CONSTRAINT `fk_report_executor` FOREIGN KEY (`executed_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 -- Insert default admin user (password: admin123)
-INSERT INTO `users` (`name`, `email`, `password`, `phone`, `role_id`, `address`, `created_at`) 
+INSERT INTO `users` (`name`, `email`, `password`, `phone`, `role_id`, `address`, `created_at`)
 VALUES ('Admin User', 'admin@example.com', '$2y$10$yBkZhjHKlXAXZ5NFiHInfeaZso7WZw0TGFzSK3vR4bX9Rf/jDEwdy', '0700000000', 1, 'Admin Office', NOW());
 
 -- Insert sample reports
 INSERT INTO `reports` (`name`, `description`, `report_type`, `created_by`, `is_public`, `created_at`)
-VALUES 
+VALUES
 ('Sales Summary', 'Summary of all sales by period', 'sales', 1, 1, NOW()),
 ('Inventory Status', 'Current inventory levels for all products', 'inventory', 1, 1, NOW()),
 ('User Activity', 'User login and transaction activity', 'user', 1, 0, NOW()),

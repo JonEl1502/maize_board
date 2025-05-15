@@ -76,12 +76,12 @@ try {
         // Define payment status mappings that match the enum values in the database
         // The transactions table payment_status is an enum('pending','completed','failed','refunded')
         $paymentStatusMappings = [
-            1 => 'pending',    // Listed/Pending
-            2 => 'completed',  // Spoken For/Completed
-            3 => 'completed',  // Paid For maps to completed
-            4 => 'completed',  // Sold maps to completed
-            5 => 'refunded',   // If status ID 5 exists and means refunded
-            6 => 'failed'      // If status ID 6 exists and means failed
+            1 => 'pending',    // Listed
+            2 => 'pending',    // Pending Payment
+            3 => 'completed',  // Paid
+            4 => 'completed',  // Completed
+            5 => 'failed',     // Cancelled
+            6 => 'refunded'    // Refunded
         ];
 
         // Get the appropriate payment_status value based on the status ID
@@ -125,11 +125,12 @@ try {
             // If status_id column doesn't exist, use the status column (which is an enum)
             // Map the status ID to the appropriate enum value
             $statusMap = [
-                1 => 'pending',
-                2 => 'paid',
-                3 => 'shipped',
-                4 => 'delivered',
-                5 => 'cancelled'
+                1 => 'pending',   // Listed
+                2 => 'pending',   // Pending Payment
+                3 => 'paid',      // Paid
+                4 => 'delivered', // Completed
+                5 => 'cancelled', // Cancelled
+                6 => 'refunded'   // Refunded
             ];
 
             $statusValue = isset($statusMap[$newStatusId]) ? $statusMap[$newStatusId] : 'pending';
@@ -173,13 +174,24 @@ try {
         }
     }
 
-    // Log the action
-    $logQuery = "INSERT INTO activity_logs (user_id, action, details, ip_address) VALUES (?, 'update_status', ?, ?)";
-    $logStmt = $conn->prepare($logQuery);
-    $details = "Updated transaction #$transactionId status to " . $status['name'];
-    $ipAddress = $_SERVER['REMOTE_ADDR'];
-    $logStmt->bind_param("iss", $userId, $details, $ipAddress);
-    $logStmt->execute();
+    // Log the action (if activity_logs table exists)
+    try {
+        // Check if activity_logs table exists
+        $tableCheckQuery = "SHOW TABLES LIKE 'activity_logs'";
+        $tableCheckResult = $conn->query($tableCheckQuery);
+
+        if ($tableCheckResult->num_rows > 0) {
+            $logQuery = "INSERT INTO activity_logs (user_id, action, details, ip_address) VALUES (?, 'update_status', ?, ?)";
+            $logStmt = $conn->prepare($logQuery);
+            $details = "Updated transaction #$transactionId status to " . $status['name'];
+            $ipAddress = $_SERVER['REMOTE_ADDR'];
+            $logStmt->bind_param("iss", $userId, $details, $ipAddress);
+            $logStmt->execute();
+        }
+    } catch (Exception $e) {
+        // Silently ignore logging errors - don't let them affect the main transaction
+        error_log("Error logging activity: " . $e->getMessage());
+    }
 
     // Commit the transaction
     $conn->commit();

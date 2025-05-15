@@ -4,7 +4,7 @@ include 'config.php';
 
 try {
     // Query to get all statuses
-    $query = "SELECT id, name FROM statuses ORDER BY id";
+    $query = "SELECT id, name, description FROM statuses ORDER BY id";
     $result = $conn->query($query);
 
     if (!$result) {
@@ -14,12 +14,12 @@ try {
     // Define payment status mappings that match the enum values in the database
     // The transactions table payment_status is an enum('pending','completed','failed','refunded')
     $paymentStatusMappings = [
-        1 => 'pending',    // Listed/Pending
-        2 => 'completed',  // Spoken For/Completed
-        3 => 'completed',  // Paid For maps to completed
-        4 => 'completed',  // Sold maps to completed
-        5 => 'refunded',   // If status ID 5 exists and means refunded
-        6 => 'failed'      // If status ID 6 exists and means failed
+        1 => 'pending',    // Listed
+        2 => 'pending',    // Pending Payment
+        3 => 'completed',  // Paid
+        4 => 'completed',  // Completed
+        5 => 'failed',     // Cancelled
+        6 => 'refunded'    // Refunded
     ];
 
     $statuses = [];
@@ -42,7 +42,7 @@ try {
         $statuses[] = [
             'id' => $statusId,
             'name' => $row['name'],
-            'description' => null, // No description column in the database
+            'description' => $row['description'],
             'payment_status' => $paymentStatus
         ];
     }

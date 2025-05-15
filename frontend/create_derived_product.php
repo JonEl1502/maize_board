@@ -171,9 +171,9 @@
             if (user) {
                 const userData = JSON.parse(user);
                 userId = userData.id;
-                
-                // Check if user is a wholesaler (role_id 2)
-                if (userData.role_id !== 2) {
+
+                // Check if user is a wholesaler (role_id 3)
+                if (userData.role_id !== 3) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Access Denied',
@@ -184,13 +184,13 @@
                     });
                     return;
                 }
-                
+
                 let entity_name = userData.entity_name ?? userData.name;
                 document.getElementById("welcomeMessage").innerText = `Welcome, ${entity_name} (${userData.role})`;
-                
+
                 // Load available materials
                 loadAvailableMaterials();
-                
+
                 // Load categories
                 loadCategories();
             } else {
@@ -203,18 +203,18 @@
             try {
                 const response = await fetch(`${window.location.origin}/maizemarket/backend/get_user_materials.php?user_id=${userId}`);
                 const data = await response.json();
-                
+
                 if (data.status === 200) {
                     availableMaterials = data.materials;
                     displayAvailableMaterials();
                     populateMaterialSelect();
                 } else {
-                    document.getElementById('availableMaterials').innerHTML = 
+                    document.getElementById('availableMaterials').innerHTML =
                         `<p class="text-danger">Error: ${data.message}</p>`;
                 }
             } catch (error) {
                 console.error('Error loading materials:', error);
-                document.getElementById('availableMaterials').innerHTML = 
+                document.getElementById('availableMaterials').innerHTML =
                     `<p class="text-danger">Failed to load materials. Please try again.</p>`;
             }
         }
@@ -222,12 +222,12 @@
         // Display available materials in the sidebar
         function displayAvailableMaterials() {
             const container = document.getElementById('availableMaterials');
-            
+
             if (availableMaterials.length === 0) {
                 container.innerHTML = `<p class="text-center">You don't have any materials available. Please purchase some first.</p>`;
                 return;
             }
-            
+
             let html = '';
             availableMaterials.forEach(material => {
                 html += `
@@ -238,7 +238,7 @@
                 </div>
                 <hr>`;
             });
-            
+
             container.innerHTML = html;
         }
 
@@ -246,10 +246,10 @@
         function populateMaterialSelect() {
             const select = document.getElementById('materialSelect');
             select.innerHTML = '<option value="">Select a material</option>';
-            
+
             availableMaterials.forEach(material => {
                 if (material.available_quantity > 0) {
-                    select.innerHTML += `<option value="${material.product_id}" 
+                    select.innerHTML += `<option value="${material.product_id}"
                         data-quantity="${material.available_quantity}"
                         data-unit="${material.unit_name}"
                         data-unit-id="${material.quantity_type_id}">
@@ -264,9 +264,9 @@
             try {
                 const response = await fetch(`${window.location.origin}/maizemarket/backend/get_categories.php`);
                 const data = await response.json();
-                
+
                 const categorySelect = document.getElementById('category');
-                
+
                 if (data.status === 200) {
                     categorySelect.innerHTML = '<option value="">Select Category</option>';
                     data.categories.forEach(category => {
@@ -277,7 +277,7 @@
                 }
             } catch (error) {
                 console.error('Error loading categories:', error);
-                document.getElementById('category').innerHTML = 
+                document.getElementById('category').innerHTML =
                     '<option value="">Failed to load categories</option>';
             }
         }
@@ -286,18 +286,18 @@
         document.getElementById('materialSelect').addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const quantityUnitSelect = document.getElementById('quantityUnit');
-            
+
             if (this.value) {
                 const availableQty = selectedOption.getAttribute('data-quantity');
                 const unitName = selectedOption.getAttribute('data-unit');
                 const unitId = selectedOption.getAttribute('data-unit-id');
-                
+
                 document.getElementById('availableQuantity').textContent = availableQty;
                 document.getElementById('unitName').textContent = unitName;
-                
+
                 // Set the unit in the dropdown
                 quantityUnitSelect.innerHTML = `<option value="${unitId}">${unitName}</option>`;
-                
+
                 // Set max value for quantity input
                 document.getElementById('quantityUsed').max = availableQty;
             } else {
@@ -315,7 +315,7 @@
             document.getElementById('quantityUnit').innerHTML = '';
             document.getElementById('availableQuantity').textContent = '0';
             document.getElementById('unitName').textContent = '';
-            
+
             // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('addMaterialModal'));
             modal.show();
@@ -326,7 +326,7 @@
             const materialSelect = document.getElementById('materialSelect');
             const quantityUsed = document.getElementById('quantityUsed');
             const quantityUnit = document.getElementById('quantityUnit');
-            
+
             if (!materialSelect.value || !quantityUsed.value || parseFloat(quantityUsed.value) <= 0) {
                 Swal.fire({
                     icon: 'error',
@@ -335,7 +335,7 @@
                 });
                 return;
             }
-            
+
             const selectedOption = materialSelect.options[materialSelect.selectedIndex];
             const materialId = materialSelect.value;
             const materialName = selectedOption.text.split(' (')[0];
@@ -343,7 +343,7 @@
             const unitId = quantityUnit.value;
             const unitName = selectedOption.getAttribute('data-unit');
             const availableQty = parseFloat(selectedOption.getAttribute('data-quantity'));
-            
+
             if (quantity > availableQty) {
                 Swal.fire({
                     icon: 'error',
@@ -352,7 +352,7 @@
                 });
                 return;
             }
-            
+
             // Add to selected materials array
             const materialItem = {
                 id: materialCounter++,
@@ -362,12 +362,12 @@
                 quantity_type_id: unitId,
                 unit_name: unitName
             };
-            
+
             selectedMaterials.push(materialItem);
-            
+
             // Update the UI
             updateMaterialsList();
-            
+
             // Close the modal
             bootstrap.Modal.getInstance(document.getElementById('addMaterialModal')).hide();
         });
@@ -375,12 +375,12 @@
         // Update the materials list in the UI
         function updateMaterialsList() {
             const container = document.getElementById('materialsList');
-            
+
             if (selectedMaterials.length === 0) {
                 container.innerHTML = '<p class="text-muted">No materials added yet. Click "Add Material" to add source materials.</p>';
                 return;
             }
-            
+
             let html = '';
             selectedMaterials.forEach(material => {
                 html += `
@@ -392,7 +392,7 @@
                     <p class="mb-0">Quantity: ${material.quantity_used} ${material.unit_name}</p>
                 </div>`;
             });
-            
+
             container.innerHTML = html;
         }
 
@@ -405,7 +405,7 @@
         // Submit the form to create a derived product
         document.getElementById('derivedProductForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             if (selectedMaterials.length === 0) {
                 Swal.fire({
                     icon: 'error',
@@ -414,12 +414,12 @@
                 });
                 return;
             }
-            
+
             const productName = document.getElementById('productName').value;
             const description = document.getElementById('description').value;
             const processingMethod = document.getElementById('processingMethod').value;
             const categoryId = document.getElementById('category').value;
-            
+
             // Prepare the data
             const data = {
                 wholesaler_id: userId,
@@ -433,7 +433,7 @@
                     quantity_type_id: material.quantity_type_id
                 }))
             };
-            
+
             try {
                 // Show loading
                 Swal.fire({
@@ -444,7 +444,7 @@
                         Swal.showLoading();
                     }
                 });
-                
+
                 const response = await fetch(`${window.location.origin}/maizemarket/backend/create_derived_product.php`, {
                     method: 'POST',
                     headers: {
@@ -452,9 +452,9 @@
                     },
                     body: JSON.stringify(data)
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (result.status === 200) {
                     Swal.fire({
                         icon: 'success',

@@ -8,10 +8,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Farmer Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .card {
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .dropdown-menu {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            transition: background-color 0.2s;
+        }
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        .dropdown-divider {
+            margin: 0.5rem 0;
         }
     </style>
 </head>
@@ -19,22 +34,26 @@
 <body class="bg-light">
     <nav class="navbar navbar-dark bg-success">
         <div class="container">
-            <a class="navbar-brand me-4" href="#" id="welcomeMessage">Loading...</a>
+            <div class="d-flex align-items-center">
+                <a href="home.php" class="btn btn-outline-light me-3"><i class="fas fa-arrow-left"></i> Back to Home</a>
+                <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
+            </div>
 
             <div class="d-flex align-items-end">
                 <div class="dropdown">
-                    <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        Menu
+                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bars"></i> Menu
                     </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <li><a class="dropdown-item" href="sales.php">My Sales</a></li>
-                    <li><a class="dropdown-item" href="purchases.php">My Purchases</a></li>
-                    <li><a class="dropdown-item" href="reports.php">Reports</a></li>
-                    <li id="buyMenuItem"><a class="dropdown-item" href="home.php">Buy</a></li>
-                    <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                        <li><a class="dropdown-item" href="dashboard.php"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                        <li><a class="dropdown-item" href="sales.php"><i class="fas fa-chart-line me-2"></i>My Sales</a></li>
+                        <li><a class="dropdown-item" href="purchases.php"><i class="fas fa-shopping-bag me-2"></i>My Purchases</a></li>
+                        <li><a class="dropdown-item" href="reports.php"><i class="fas fa-file-alt me-2"></i>Reports</a></li>
+                        <li id="buyMenuItem"><a class="dropdown-item" href="home.php"><i class="fas fa-shopping-cart me-2"></i>Buy</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>
                 </div>
-                <a href="home.php" class="btn btn-outline-light me-2"><i class="fas fa-arrow-left"></i> Back to Home</a>
             </div>
         </div>
     </nav>
@@ -238,11 +257,15 @@
                 document.getElementById("welcomeMessage").innerText = `Welcome, ${entity_name}  (${userData.role})`;
                 document.getElementById("farmerId").value = userData.id;
 
-                // Hide "Buy" menu item if user is role_id 2
+                // Hide "Buy" menu item if user is role_id 2 (Farmer)
                 if (userData.role_id === 2) {
                     document.getElementById("buyMenuItem").style.display = "none";
+                    // Don't show "Create Derived Product" button for farmers
+                    document.getElementById("createDerivedBtn").style.display = "none";
+                }
 
-                    // Show "Create Derived Product" button for wholesalers
+                // Show "Create Derived Product" button only for wholesalers (role_id 3)
+                if (userData.role_id === 3) {
                     document.getElementById("createDerivedBtn").style.display = "inline-block";
                 }
 

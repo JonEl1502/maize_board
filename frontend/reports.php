@@ -21,6 +21,20 @@
             height: 300px;
             width: 100%;
         }
+        .dropdown-menu {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            transition: background-color 0.2s;
+        }
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        .dropdown-divider {
+            margin: 0.5rem 0;
+        }
     </style>
 </head>
 
@@ -28,20 +42,26 @@
 
     <nav class="navbar navbar-dark bg-success">
         <div class="container">
-            <a class="navbar-brand me-4" href="#" id="welcomeMessage">Loading...</a>
+            <div class="d-flex align-items-center">
+                <a href="dashboard.php" class="btn btn-outline-light me-3"><i class="fas fa-arrow-left"></i> Back</a>
+                <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
+            </div>
 
             <div class="d-flex align-items-end">
                 <div class="dropdown">
-                    <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        Menu
+                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bars"></i> Menu
                     </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <li><a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
-                    <li><a class="dropdown-item" href="home.php">Home</a></li>
-                    <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                        <li><a class="dropdown-item" href="dashboard.php"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                        <li><a class="dropdown-item" href="sales.php"><i class="fas fa-chart-line me-2"></i>My Sales</a></li>
+                        <li><a class="dropdown-item" href="purchases.php"><i class="fas fa-shopping-bag me-2"></i>My Purchases</a></li>
+                        <li><a class="dropdown-item" href="reports.php"><i class="fas fa-file-alt me-2"></i>Reports</a></li>
+                        <li id="buyMenuItem"><a class="dropdown-item" href="home.php"><i class="fas fa-shopping-cart me-2"></i>Buy</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>
                 </div>
-                <a href="dashboard.php" class="btn btn-outline-light"><i class="fas fa-arrow-left"></i> Back</a>
             </div>
         </div>
     </nav>

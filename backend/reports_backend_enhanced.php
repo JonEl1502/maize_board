@@ -63,7 +63,8 @@ try {
                         SUM(CASE WHEN p.seller_id = $user_id THEN p.quantity * pl.price_per_quantity ELSE 0 END) as total_sales,
                         SUM(CASE WHEN p.buyer_id = $user_id THEN p.quantity * pl.price_per_quantity ELSE 0 END) as total_purchases,
                         AVG(p.quantity * pl.price_per_quantity) as average_transaction,
-                        ROUND(COUNT(CASE WHEN s.id = 2 THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1) as success_rate
+                        /* Calculate success rate based on completed transactions (status_id = 4) */
+                        ROUND(COUNT(CASE WHEN s.id = 4 THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1) as success_rate
                       $base_query
                       WHERE $role_condition";
 

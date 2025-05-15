@@ -26,6 +26,20 @@
             cursor: pointer;
             color: #dc3545;
         }
+        .dropdown-menu {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            transition: background-color 0.2s;
+        }
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        .dropdown-divider {
+            margin: 0.5rem 0;
+        }
     </style>
 </head>
 
@@ -41,14 +55,16 @@
             <div class="d-flex align-items-end">
                 <div class="dropdown">
                     <button class="btn btn-outline-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        Menu
+                        <i class="fas fa-bars"></i> Menu
                     </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <li><a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="sales.php">My Sales</a></li>
-                        <li><a class="dropdown-item" href="purchases.php">My Purchases</a></li>
-                        <li id="buyMenuItem"><a class="dropdown-item" href="home.php">Buy</a></li>
-                        <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                        <li><a class="dropdown-item" href="dashboard.php"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                        <li><a class="dropdown-item" href="sales.php"><i class="fas fa-chart-line me-2"></i>My Sales</a></li>
+                        <li><a class="dropdown-item" href="purchases.php"><i class="fas fa-shopping-bag me-2"></i>My Purchases</a></li>
+                        <li><a class="dropdown-item" href="reports.php"><i class="fas fa-file-alt me-2"></i>Reports</a></li>
+                        <li id="buyMenuItem"><a class="dropdown-item" href="home.php"><i class="fas fa-shopping-cart me-2"></i>Buy</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                     </ul>
                 </div>
             </div>
@@ -85,6 +101,26 @@
                                     <option value="">Select Category</option>
                                     <!-- Categories will be loaded dynamically -->
                                 </select>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="quantity" class="form-label">Quantity Available</label>
+                                    <input type="number" class="form-control" id="quantity" min="1" step="1" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="quantityType" class="form-label">Quantity Unit</label>
+                                    <select class="form-select" id="quantityType" required>
+                                        <option value="">Select Unit</option>
+                                        <!-- Units will be loaded dynamically -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="pricePerUnit" class="form-label">Price per Unit (Ksh)</label>
+                                <input type="number" class="form-control" id="pricePerUnit" min="0" step="0.01" required>
                             </div>
 
                             <h4 class="mt-4 mb-3">Source Materials</h4>
@@ -193,6 +229,9 @@
 
                 // Load categories
                 loadCategories();
+
+                // Load quantity types
+                loadQuantityTypes();
             } else {
                 window.location.href = 'login.php';
             }
@@ -279,6 +318,29 @@
                 console.error('Error loading categories:', error);
                 document.getElementById('category').innerHTML =
                     '<option value="">Failed to load categories</option>';
+            }
+        }
+
+        // Load quantity types for the dropdown
+        async function loadQuantityTypes() {
+            try {
+                const response = await fetch(`${window.location.origin}/maizemarket/backend/get_quantity_types.php`);
+                const data = await response.json();
+
+                const quantityTypeSelect = document.getElementById('quantityType');
+
+                if (data.status === 200) {
+                    quantityTypeSelect.innerHTML = '<option value="">Select Unit</option>';
+                    data.quantity_types.forEach(type => {
+                        quantityTypeSelect.innerHTML += `<option value="${type.id}">${type.unit_name}</option>`;
+                    });
+                } else {
+                    quantityTypeSelect.innerHTML = '<option value="">Error loading units</option>';
+                }
+            } catch (error) {
+                console.error('Error loading quantity types:', error);
+                document.getElementById('quantityType').innerHTML =
+                    '<option value="">Failed to load units</option>';
             }
         }
 
@@ -419,6 +481,12 @@
             const description = document.getElementById('description').value;
             const processingMethod = document.getElementById('processingMethod').value;
             const categoryId = document.getElementById('category').value;
+            const quantity = document.getElementById('quantity').value;
+            const quantityTypeId = document.getElementById('quantityType').value;
+            const pricePerUnit = document.getElementById('pricePerUnit').value;
+
+            // Calculate total price
+            const totalPrice = parseFloat(pricePerUnit) * parseFloat(quantity);
 
             // Prepare the data
             const data = {
@@ -427,6 +495,10 @@
                 description: description,
                 processing_method: processingMethod,
                 category_id: categoryId,
+                quantity: quantity,
+                quantity_type_id: quantityTypeId,
+                price_per_unit: pricePerUnit,
+                price: totalPrice,
                 materials: selectedMaterials.map(material => ({
                     source_product_id: material.source_product_id,
                     quantity_used: material.quantity_used,

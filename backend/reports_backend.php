@@ -22,7 +22,7 @@ try {
     ];
 
     // Base query for purchases
-    $base_query = "FROM purchases p 
+    $base_query = "FROM purchases p
                    LEFT JOIN product_listings pl ON p.listing_id = pl.id
                    LEFT JOIN products pr ON pl.product_id = pr.id
                    LEFT JOIN quantity_types qu ON pl.quantity_type_id = qu.id
@@ -43,10 +43,11 @@ try {
     }
 
     // Get summary data
-    $summary_query = "SELECT 
+    $summary_query = "SELECT
                         COUNT(*) as total_transactions,
                         SUM(p.quantity * pl.price_per_quantity) as total_amount,
-                        ROUND(COUNT(CASE WHEN s.id = 2 THEN 1 END) * 100.0 / COUNT(*), 1) as success_rate
+                        /* Calculate success rate based on completed transactions (status_id = 4) */
+                        ROUND(COUNT(CASE WHEN s.id = 4 THEN 1 END) * 100.0 / COUNT(*), 1) as success_rate
                       $base_query
                       WHERE $role_condition";
 
@@ -60,7 +61,7 @@ try {
     }
 
     // Get transaction history (last 7 days)
-    $history_query = "SELECT 
+    $history_query = "SELECT
                         DATE(p.created_at) as date,
                         SUM(p.quantity * pl.price_per_quantity) as amount
                       $base_query
@@ -78,7 +79,7 @@ try {
     }
 
     // Get status distribution
-    $status_query = "SELECT 
+    $status_query = "SELECT
                        s.name as status,
                        COUNT(*) as count
                      $base_query
@@ -91,7 +92,7 @@ try {
     }
 
     // Get recent transactions
-    $recent_query = "SELECT 
+    $recent_query = "SELECT
                        p.created_at as date,
                        pr.name as product_name,
                        p.quantity,

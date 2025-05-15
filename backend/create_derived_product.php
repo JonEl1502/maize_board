@@ -10,10 +10,11 @@ ini_set('display_errors', 1);
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Validate required fields
-if (!isset($data['wholesaler_id'], $data['product_name'], $data['description'], $data['processing_method'], $data['category_id'], $data['materials'])) {
+if (!isset($data['wholesaler_id'], $data['product_name'], $data['description'], $data['processing_method'],
+           $data['category_id'], $data['materials'], $data['quantity'], $data['quantity_type_id'], $data['price_per_unit'])) {
     echo json_encode([
         'status' => 400,
-        'message' => 'Missing required fields: wholesaler_id, product_name, description, processing_method, category_id, and materials are required'
+        'message' => 'Missing required fields: wholesaler_id, product_name, description, processing_method, category_id, materials, quantity, quantity_type_id, and price_per_unit are required'
     ]);
     exit;
 }
@@ -35,6 +36,10 @@ $processing_method = trim($data['processing_method']);
 $category_id = intval($data['category_id']);
 $materials = $data['materials'];
 $image_url = isset($data['image_url']) ? trim($data['image_url']) : '';
+$quantity = floatval($data['quantity']);
+$quantity_type_id = intval($data['quantity_type_id']);
+$price_per_unit = floatval($data['price_per_unit']);
+$price = isset($data['price']) ? floatval($data['price']) : ($price_per_unit * $quantity);
 
 try {
     // Start transaction
@@ -66,8 +71,12 @@ try {
         throw new Exception("A product with this name already exists");
     }
 
-    // Insert the new product
-    $insertProductQuery = "INSERT INTO products (name, description, image_url, is_derived, created_by, category_id) VALUES (?, ?, ?, 1, ?, ?)";
+    // Generate a unique tracking ID for the derived product
+    $tracking_id = 'DP-' . date('Ymd') . '-' . substr(uniqid(), -6);
+
+    // Insert the new product with tracking information
+    $insertProductQuery = "INSERT INTO products (name, description, image_url, is_derived, created_by, category_id, updated_at)
+                          VALUES (?, ?, ?, 1, ?, ?, NOW())";
     $insertProductStmt = $conn->prepare($insertProductQuery);
     $insertProductStmt->bind_param("sssii", $product_name, $description, $image_url, $wholesaler_id, $category_id);
 
@@ -76,6 +85,9 @@ try {
     }
 
     $product_id = $conn->insert_id;
+
+    // Log the product creation for tracking
+    error_log("Created derived product ID: {$product_id}, Tracking ID: {$tracking_id}, Created by: {$wholesaler_id}");
 
     // Insert the derived product record
     $insertDerivedQuery = "INSERT INTO derived_products (product_id, wholesaler_id, description, processing_method) VALUES (?, ?, ?, ?)";
@@ -137,6 +149,22 @@ try {
         // Instead, we're tracking usage in the product_materials table
     }
 
+    // Create a product listing for the derived product so the wholesaler can see it in their dashboard
+    // Use the provided quantity, quantity type, and price
+    $statusId = 1; // Available
+
+    // Insert the product listing
+    $insertListingQuery = "INSERT INTO product_listings (seller_id, product_id, quantity, quantity_type_id, price_per_quantity, price, status_id)
+                          VALUES (?, ?, ?, ?, ?, ?, ?)";
+    $insertListingStmt = $conn->prepare($insertListingQuery);
+    $insertListingStmt->bind_param("iidiidi", $wholesaler_id, $product_id, $quantity, $quantity_type_id, $price_per_unit, $price, $statusId);
+
+    if (!$insertListingStmt->execute()) {
+        throw new Exception("Failed to create product listing: " . $insertListingStmt->error);
+    }
+
+    $listing_id = $conn->insert_id;
+
     // Commit the transaction
     $conn->commit();
 
@@ -144,7 +172,9 @@ try {
         'status' => 200,
         'message' => 'Derived product created successfully',
         'product_id' => $product_id,
-        'derived_product_id' => $derived_product_id
+        'derived_product_id' => $derived_product_id,
+        'listing_id' => $listing_id,
+        'tracking_id' => $tracking_id
     ]);
 
 } catch (Exception $e) {

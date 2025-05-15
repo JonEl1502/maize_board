@@ -19,8 +19,8 @@ $user_id = intval($_GET['user_id']);
 
 try {
     // Query to get all materials the user has purchased
-    $query = "SELECT 
-                p.product_id,
+    $query = "SELECT
+                pl.product_id,
                 pr.name AS product_name,
                 pr.description AS product_description,
                 SUM(p.quantity) AS total_quantity,
@@ -30,7 +30,7 @@ try {
                     SELECT COALESCE(SUM(pm.quantity_used), 0)
                     FROM product_materials pm
                     JOIN derived_products dp ON pm.derived_product_id = dp.id
-                    WHERE pm.source_product_id = p.product_id
+                    WHERE pm.source_product_id = pl.product_id
                     AND dp.wholesaler_id = ?
                     AND pm.quantity_type_id = pl.quantity_type_id
                 ) AS used_quantity
@@ -39,20 +39,20 @@ try {
             JOIN products pr ON pl.product_id = pr.id
             JOIN quantity_types qt ON pl.quantity_type_id = qt.id
             WHERE p.buyer_id = ?
-            GROUP BY p.product_id, pl.quantity_type_id";
-    
+            GROUP BY pl.product_id, pl.quantity_type_id";
+
     $stmt = $conn->prepare($query);
     $stmt->bind_param("ii", $user_id, $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     $materials = [];
     while ($row = $result->fetch_assoc()) {
         // Calculate available quantity
         $row['available_quantity'] = $row['total_quantity'] - $row['used_quantity'];
         $materials[] = $row;
     }
-    
+
     echo json_encode([
         'status' => 200,
         'message' => 'Materials retrieved successfully',

@@ -35,29 +35,50 @@
             background-color: #198754;
             color: white;
         }
+        .dropdown-menu {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            transition: background-color 0.2s;
+        }
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        .dropdown-divider {
+            margin: 0.5rem 0;
+        }
     </style>
 </head>
 
 <body>
 
     <div class="bg-light">
-        <nav class="navbar navbar-dark " style="background-color:rgb(49, 92, 59);">
+        <nav class="navbar navbar-dark" style="background-color:rgb(49, 92, 59);">
             <div class="container">
-                <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
-
-            <div class="d-flex align-items-end">
-                <button class="btn btn-outline-light me-4" onclick="openCartModal()"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-light text-dark" id="cartCount">0</span></button>
-                <div class="dropdown">
-                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        Menu
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <li id="menuItem"> <a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
-                    <li><a class="dropdown-item" href="purchases.php">My Purchases</a></li>
-                    <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
-                    </ul>
+                <div class="d-flex align-items-center">
+                    <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
                 </div>
-            </div>
+
+                <div class="d-flex align-items-end">
+                    <button class="btn btn-outline-light me-3" onclick="openCartModal()">
+                        <i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-light text-dark" id="cartCount">0</span>
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bars"></i> Menu
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                            <li id="dashboardMenuItem"><a class="dropdown-item" href="dashboard.php"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                            <li id="salesMenuItem"><a class="dropdown-item" href="sales.php"><i class="fas fa-chart-line me-2"></i>My Sales</a></li>
+                            <li id="purchasesMenuItem"><a class="dropdown-item" href="purchases.php"><i class="fas fa-shopping-bag me-2"></i>My Purchases</a></li>
+                            <li id="reportsMenuItem"><a class="dropdown-item" href="reports.php"><i class="fas fa-file-alt me-2"></i>Reports</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </nav>
     </div>
@@ -402,8 +423,25 @@
                 document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.name}  (${userData.role})`;
             }
 
-            if (userData.role_id >= 4) {
-                    document.getElementById("menuItem").style.display = "none";
+            // Handle menu visibility based on role
+            if (userData.role_id === 5) { // Customer
+                // Customers should only see Purchases menu item
+                document.getElementById("dashboardMenuItem").style.display = "none";
+                document.getElementById("salesMenuItem").style.display = "none";
+                document.getElementById("reportsMenuItem").style.display = "none";
+                // Keep purchasesMenuItem visible
+            } else if (userData.role_id === 2 || userData.role_id === 3) { // Farmer or Wholesaler
+                // Show all menu items for farmers and wholesalers
+                document.getElementById("dashboardMenuItem").style.display = "block";
+                document.getElementById("salesMenuItem").style.display = "block";
+                document.getElementById("purchasesMenuItem").style.display = "block";
+                document.getElementById("reportsMenuItem").style.display = "block";
+            } else if (userData.role_id === 4) { // Retailer
+                // Retailers should see purchases but not dashboard
+                document.getElementById("dashboardMenuItem").style.display = "none";
+                document.getElementById("salesMenuItem").style.display = "block";
+                document.getElementById("purchasesMenuItem").style.display = "block";
+                document.getElementById("reportsMenuItem").style.display = "none";
             }
 
             if (userData.role_id === 2) {
@@ -490,6 +528,11 @@
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
         document.getElementById('cartCount').textContent = totalItems;
+    }
+
+    function logout() {
+        localStorage.removeItem('user');
+        window.location.href = 'login.php';
     }
 
     function openCartModal() {

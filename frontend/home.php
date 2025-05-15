@@ -544,6 +544,24 @@
     }
 
     function openCartModal() {
+        // Update cart display
+        updateCartDisplay();
+
+        // Show the modal
+        new bootstrap.Modal(document.getElementById('cartModal')).show();
+    }
+
+    function updateCartItemQuantity(index, change) {
+        const cart = JSON.parse(localStorage.getItem('cart'));
+        cart[index].quantity = Math.max(1, cart[index].quantity + change);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCount();
+
+        // Update cart content without reopening the modal
+        updateCartDisplay();
+    }
+
+    function updateCartDisplay() {
         const cart = JSON.parse(localStorage.getItem('cart')) || [];
         const cartItemsContainer = document.getElementById('cartItems');
         let total = 0;
@@ -578,16 +596,6 @@
             cartItemsContainer.innerHTML = html;
             document.getElementById('cartTotal').textContent = total.toFixed(2);
         }
-
-        new bootstrap.Modal(document.getElementById('cartModal')).show();
-    }
-
-    function updateCartItemQuantity(index, change) {
-        const cart = JSON.parse(localStorage.getItem('cart'));
-        cart[index].quantity = Math.max(1, cart[index].quantity + change);
-        localStorage.setItem('cart', JSON.stringify(cart));
-        updateCartCount();
-        openCartModal(); // Refresh cart modal
     }
 
     function removeFromCart(index) {
@@ -595,7 +603,7 @@
         cart.splice(index, 1);
         localStorage.setItem('cart', JSON.stringify(cart));
         updateCartCount();
-        openCartModal(); // Refresh cart modal
+        updateCartDisplay(); // Update cart content without reopening the modal
     }
 
     function proceedToCheckout() {

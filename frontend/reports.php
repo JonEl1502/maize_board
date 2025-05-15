@@ -959,22 +959,23 @@
                         console.log('Loaded statuses:', statusOptions);
                     } else {
                         console.error('Error loading statuses:', data.message);
-                        // Default statuses if API fails
+                        // Default statuses if API fails - using valid enum values
                         statusOptions = [
                             { id: 1, name: 'Listed', payment_status: 'pending' },
                             { id: 2, name: 'Spoken For', payment_status: 'completed' },
-                            { id: 3, name: 'Paid For', payment_status: 'cancelled' },
-                            { id: 4, name: 'Sold', payment_status: 'sold' },
+                            { id: 3, name: 'Paid For', payment_status: 'completed' },
+                            { id: 4, name: 'Sold', payment_status: 'completed' },
                         ];
                     }
                 })
                 .catch(error => {
                     console.error('Error loading statuses:', error);
-                    // Default statuses if API fails
+                    // Default statuses if API fails - using valid enum values
                     statusOptions = [
                         { id: 1, name: 'Pending', payment_status: 'pending' },
                         { id: 2, name: 'Completed', payment_status: 'completed' },
-                        { id: 3, name: 'Cancelled', payment_status: 'cancelled' }
+                        { id: 3, name: 'Cancelled', payment_status: 'failed' },
+                        { id: 4, name: 'Refunded', payment_status: 'refunded' }
                     ];
                 });
         }

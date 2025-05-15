@@ -4,34 +4,45 @@ include 'config.php';
 
 try {
     // Query to get all statuses
-    $query = "SELECT id, name, description FROM statuses ORDER BY id";
+    $query = "SELECT id, name FROM statuses ORDER BY id";
     $result = $conn->query($query);
 
     if (!$result) {
         throw new Exception("Error fetching statuses: " . $conn->error);
     }
 
-    // Define standard payment status mappings
+    // Define payment status mappings that match the enum values in the database
+    // The transactions table payment_status is an enum('pending','completed','failed','refunded')
     $paymentStatusMappings = [
-        1 => 'pending',    // Assuming ID 1 is Pending
-        2 => 'completed',  // Assuming ID 2 is Completed
-        3 => 'cancelled',  // Assuming ID 3 is Cancelled
-        4 => 'processing', // Assuming ID 4 is Processing
-        5 => 'refunded',   // Assuming ID 5 is Refunded
-        6 => 'failed'      // Assuming ID 6 is Failed
+        1 => 'pending',    // Listed/Pending
+        2 => 'completed',  // Spoken For/Completed
+        3 => 'completed',  // Paid For maps to completed
+        4 => 'completed',  // Sold maps to completed
+        5 => 'refunded',   // If status ID 5 exists and means refunded
+        6 => 'failed'      // If status ID 6 exists and means failed
     ];
 
     $statuses = [];
     while ($row = $result->fetch_assoc()) {
         $statusId = (int)$row['id'];
+
+        // Valid enum values for payment_status
+        $validEnumValues = ['pending', 'completed', 'failed', 'refunded'];
+
+        // Get payment status from mapping or default to 'pending'
         $paymentStatus = isset($paymentStatusMappings[$statusId])
             ? $paymentStatusMappings[$statusId]
-            : strtolower(substr($row['name'], 0, 20));
+            : 'pending';
+
+        // Ensure it's a valid enum value
+        if (!in_array($paymentStatus, $validEnumValues)) {
+            $paymentStatus = 'pending';
+        }
 
         $statuses[] = [
             'id' => $statusId,
             'name' => $row['name'],
-            'description' => $row['description'] ?? null,
+            'description' => null, // No description column in the database
             'payment_status' => $paymentStatus
         ];
     }

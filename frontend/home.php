@@ -47,9 +47,8 @@
 
             <div class="d-flex align-items-end">
                 <button class="btn btn-outline-light me-4" onclick="openCartModal()"><i class="fas fa-shopping-cart"></i> Cart <span class="badge bg-light text-dark" id="cartCount">0</span></button>
-                <!-- <button onclick="logout((" class="btn btn-light">Logout</button> -->
-                <div class="dropdown" >
-                    <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="dropdown">
+                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                         Menu
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -58,7 +57,6 @@
                     <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
                     </ul>
                 </div>
-                <a href="index.php" class="btn btn-outline-light"><i class="fas fa-arrow-left"></i> Back to Home</a>
             </div>
             </div>
         </nav>
@@ -276,7 +274,7 @@
 </body>
 
 <!-- Seller Details Modal -->
-<div class="modal fade" id="sellerModal" tabindex="-1" aria-labelledby="sellerModalLabel" aria-hidden="true">
+<div class="modal fade" id="sellerModal" tabindex="-1" aria-labelledby="sellerModalLabel">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -296,7 +294,7 @@
 </div>
 
 <!-- Shopping Cart Modal -->
-<div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+<div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -318,7 +316,7 @@
 </div>
 
 <!-- Buy Confirmation Modal -->
-<div class="modal fade" id="buyModal" tabindex="-1" aria-labelledby="buyModalLabel" aria-hidden="true">
+<div class="modal fade" id="buyModal" tabindex="-1" aria-labelledby="buyModalLabel">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -355,18 +353,48 @@
         localStorage.setItem('cart', JSON.stringify([]));
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-        loadUser();
+    document.addEventListener("DOMContentLoaded", async function () {
+        await loadUser();
         loadCategories();
         loadProducts(); // Load products for filtering
         updateCartCount(); // Update cart count on page load
     });
 
-    function loadUser() {
+    // Function to validate user exists in the database
+    async function validateUser(userId) {
+        try {
+            const response = await fetch(`${window.location.origin}/maizemarket/backend/validate_user.php?user_id=${userId}`);
+            const data = await response.json();
+            return data.status === 200;
+        } catch (error) {
+            console.error("Error validating user:", error);
+            return false;
+        }
+    }
+
+    async function loadUser() {
         const user = localStorage.getItem("user");
         console.log("Logged in :", user);
         if (user) {
             const userData = JSON.parse(user);
+
+            // Validate that the user exists in the database
+            const isValid = await validateUser(userData.id);
+            if (!isValid) {
+                // User doesn't exist in the database, clear localStorage and redirect to login
+                localStorage.removeItem("user");
+                Swal.fire({
+                    icon: "error",
+                    title: "Invalid User",
+                    text: "Your user account could not be found. Please log in again.",
+                    timer: 3000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = "login.php";
+                });
+                return;
+            }
+
             document.getElementById("welcomeMessage").innerText = `Welcome, ${userData.entity_name}  (${userData.role})`;
 
             console.log(`Logged IDD  ed:${userData.name} ${userData.role_id}`);
@@ -580,7 +608,11 @@
         if (filters.filterPriceMin) params.append("min_price", filters.filterPriceMin);
         if (filters.filterPriceMax) params.append("max_price", filters.filterPriceMax);
 
-        if (userId) params.append("user_id", userId);
+        if (userId) {
+            params.append("user_id", userId);
+            // Add buyer_id parameter to prevent users from seeing their own products
+            params.append("buyer_id", userId);
+        }
 
         url += `?${params.toString()}`;
 
@@ -598,14 +630,43 @@
                 // console.log("Product Listings:", JSON.stringify(data));
                 if (data.length > 0) {
                     data.forEach(row => {
+                        // Check if this is a derived product and has source materials
+                        const isDerived = row.is_derived === 1;
+                        let sourceMaterialsHtml = '';
+
+                        if (isDerived && row.source_materials) {
+                            try {
+                                const materials = JSON.parse(row.source_materials);
+                                if (materials && materials.length > 0) {
+                                    sourceMaterialsHtml = `
+                                    <div class="mt-2">
+                                        <p class="mb-1"><strong>Derived Product</strong></p>
+                                        <p class="mb-1"><small>Source Materials:</small></p>
+                                        <ul class="small">`;
+
+                                    materials.forEach(material => {
+                                        sourceMaterialsHtml += `
+                                            <li>${material.source_product_name} (${material.quantity_used} ${material.unit_name})</li>`;
+                                    });
+
+                                    sourceMaterialsHtml += `</ul>
+                                    </div>`;
+                                }
+                            } catch (e) {
+                                console.error("Error parsing source materials:", e);
+                            }
+                        }
+
                         listingsContainer.innerHTML += `
                         <div class="col-md-4 mb-3">
                             <div class="card shadow-sm">
                                 <div class="card-body">
-                                    <h5 class="card-title">${row.product_name}</h5>
+                                    <h5 class="card-title">${row.product_name} ${isDerived ? '<span class="badge bg-info">Derived</span>' : ''}</h5>
+                                    <p class="small text-muted">${row.product_description || 'No description available'}</p>
                                     <p><strong>Quantity:</strong> ${row.quantity} ${row.unit_name}</p>
                                     <p><strong>Price:</strong> Ksh ${parseFloat(row.price_per_quantity).toFixed(2)} per ${row.unit_name}</p>
-                                    <div class="d-flex justify-content-between align-items-center">
+                                    ${sourceMaterialsHtml}
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
                                         <button class="btn btn-success btn-sm" onclick="addToCart(${row.id}, '${row.product_name}', ${row.price_per_quantity}, '${row.unit_name}')">
                                             <i class="fas fa-cart-plus"></i> Add to Cart
                                         </button>

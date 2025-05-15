@@ -52,7 +52,7 @@
                         </div>
                         <div class="mb-3">
                             <label>Quantity Unit</label>
-                            <select class="form-select" name="quantity_unit_id" id="quantity_unit_id" required>
+                            <select class="form-select" name="quantity_type_id" id="quantity_unit_id" required>
                                 <option value="">Loading...</option>
                             </select>
                         </div>
@@ -230,18 +230,36 @@
                 return;
             }
 
+            // Add seller_id to the form data
             formData.append("user_id", userId);
+            formData.append("seller_id", userId);
+
             if (listingId) {
                 formData.append("listing_id", listingId);
             }
 
-            // Log listing_id and form data
-            console.log("Listing ID:", listingId);
-            console.log("Form Data:", Object.fromEntries(formData.entries()));
+            // Log form data for debugging
+            const formDataObj = {};
+            for (let [key, value] of formData.entries()) {
+                formDataObj[key] = value;
+            }
+            console.log("Form Data:", formDataObj);
 
-            fetch(`${window.location.origin}/maizemarket/backend/add_edit_listing.php`, { method: "POST", body: formData })
-                .then(response => response.json())
-                .then(result => {
+            // Send the request
+            fetch(`${window.location.origin}/maizemarket/backend/add_edit_listing.php`, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(text => {
+                try {
+                    // Try to parse the response as JSON
+                    const result = JSON.parse(text);
                     if (result.status === 200) {
                         alert("Listing Saved!");
                         loadProductListings(userId, userData.role_id);
@@ -250,8 +268,17 @@
                     } else {
                         alert("Error: " + result.message);
                     }
-                })
-                .catch(error => console.error("Error:", error));
+                } catch (e) {
+                    // If parsing fails, show the raw response
+                    console.error("Failed to parse JSON response:", e);
+                    console.error("Raw response:", text);
+                    alert("Error: The server returned an invalid response. Check the console for details.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error: " + error.message);
+            });
         });
 
         function logout() {

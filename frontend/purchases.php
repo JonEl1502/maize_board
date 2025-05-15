@@ -29,10 +29,15 @@
 <body class="bg-light">
     <nav class="navbar navbar-dark bg-success">
         <div class="container">
-            <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
+            <div class="d-flex align-items-center">
+                <a class="btn btn-outline-light me-3" href="dashboard.php">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <a class="navbar-brand" href="#" id="welcomeMessage">Loading...</a>
+            </div>
             <div class="d-flex align-items-end">
                 <div class="dropdown">
-                    <button class="btn btn-outline-light dropdown-toggle me-4" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-outline-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                         Menu
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -42,7 +47,6 @@
                     <li><a class="dropdown-item" onclick="logout()">Logout</a></li>
                     </ul>
                 </div>
-                <a href="dashboard.php" class="btn btn-outline-light"><i class="fas fa-arrow-left"></i> Back</a>
             </div>
         </div>
     </nav>

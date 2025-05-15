@@ -40,20 +40,25 @@
     </nav>
 
     <div class="container mt-5">
-        <h3 class="mb-4">Your Product Listings</h3>
-        <button type="button" class="btn btn-success mb-3" id="openModalBtn">+ Add Post</button>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3>Your Product Listings</h3>
+            <div>
+                <button type="button" class="btn btn-success me-2" id="openModalBtn">+ Add Post</button>
+                <button type="button" class="btn btn-primary" id="createDerivedBtn" style="display: none;">Create Derived Product</button>
+            </div>
+        </div>
         <div class="row" id="maizeListings">
             <!-- 🚀  Listings Load Here -->
         </div>
     </div>
 
     <!-- Add Post Modal -->
-    <div class="modal fade" id="addPostModal" tabindex="-1">
+    <div class="modal fade" id="addPostModal" tabindex="-1" aria-labelledby="addPostModalLabel">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form id="addPostForm">
                     <div class="modal-header">
-                        <h5 class="modal-title">Add Product Listing</h5>
+                        <h5 class="modal-title" id="addPostModalLabel">Add Product Listing</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -98,12 +103,12 @@
     </div>
 
     <!-- Edit Post Modal -->
-    <div class="modal fade" id="editPostModal" tabindex="-1">
+    <div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form id="editPostForm">
                     <div class="modal-header">
-                        <h5 class="modal-title">Edit Product Listing</h5>
+                        <h5 class="modal-title" id="editPostModalLabel">Edit Product Listing</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -146,26 +151,8 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", async function() {
-            let countryTypeSelect = document.getElementById("counties");
-            let editCountySelect = document.getElementById("editCountyId");
-
-            try {
-                let response = await fetch(`${window.location.origin}/maizemarket/backend/get_counties.php`);
-                let data = await response.json();
-
-                if (data.status === 200) {
-                    countryTypeSelect.innerHTML = '<option value="">Select Counties</option>';
-                    data.counties.forEach(type => {
-                        countryTypeSelect.innerHTML += `<option value="${type.id}">${type.name}</option>`;
-                    });
-                } else {
-                    countryTypeSelect.innerHTML = '<option value="">Error loading types</option>';
-                }
-            } catch (error) {
-                countryTypeSelect.innerHTML = '<option value="">Error fetching data</option>';
-            }
-        });
+        // Counties dropdown functionality removed as elements don't exist in the DOM
+        // If you need to add county selection, add the HTML elements first
 
         document.addEventListener("DOMContentLoaded", async function() {
             let productSelect = document.getElementById("product_id");
@@ -212,11 +199,41 @@
             }
         });
 
-        function loadUser() {
+        // Function to validate user exists in the database
+        async function validateUser(userId) {
+            try {
+                const response = await fetch(`${window.location.origin}/maizemarket/backend/validate_user.php?user_id=${userId}`);
+                const data = await response.json();
+                return data.status === 200;
+            } catch (error) {
+                console.error("Error validating user:", error);
+                return false;
+            }
+        }
+
+        async function loadUser() {
             const user = localStorage.getItem("user");
             console.log("Logged in Farmer:", user);
             if (user) {
                 const userData = JSON.parse(user);
+
+                // Validate that the user exists in the database
+                const isValid = await validateUser(userData.id);
+                if (!isValid) {
+                    // User doesn't exist in the database, clear localStorage and redirect to login
+                    localStorage.removeItem("user");
+                    Swal.fire({
+                        icon: "error",
+                        title: "Invalid User",
+                        text: "Your user account could not be found. Please log in again.",
+                        timer: 3000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = "login.php";
+                    });
+                    return;
+                }
+
                 let entity_name = userData.entity_name??userData.name;
                 document.getElementById("welcomeMessage").innerText = `Welcome, ${entity_name}  (${userData.role})`;
                 document.getElementById("farmerId").value = userData.id;
@@ -224,6 +241,9 @@
                 // Hide "Buy" menu item if user is role_id 2
                 if (userData.role_id === 2) {
                     document.getElementById("buyMenuItem").style.display = "none";
+
+                    // Show "Create Derived Product" button for wholesalers
+                    document.getElementById("createDerivedBtn").style.display = "inline-block";
                 }
 
                 loadMaizeListings(userData.id);
@@ -235,7 +255,7 @@
                     timer: 3000,
                     showConfirmButton: false
                 }).then(() => {
-                    // window.location.href = "login.php";
+                    window.location.href = "login.php";
                 });
             }
         }
@@ -265,14 +285,43 @@
                     }
 
                     data.data.forEach(product => {
+                        // Check if this is a derived product and has source materials
+                        const isDerived = product.is_derived === 1;
+                        let sourceMaterialsHtml = '';
+
+                        if (isDerived && product.source_materials) {
+                            try {
+                                const materials = JSON.parse(product.source_materials);
+                                if (materials && materials.length > 0) {
+                                    sourceMaterialsHtml = `
+                                    <div class="mt-2 mb-3">
+                                        <p class="mb-1"><strong>Derived Product</strong></p>
+                                        <p class="mb-1"><small>Source Materials:</small></p>
+                                        <ul class="small">`;
+
+                                    materials.forEach(material => {
+                                        sourceMaterialsHtml += `
+                                            <li>${material.source_product_name} (${material.quantity_used} ${material.unit_name})</li>`;
+                                    });
+
+                                    sourceMaterialsHtml += `</ul>
+                                    </div>`;
+                                }
+                            } catch (e) {
+                                console.error("Error parsing source materials:", e);
+                            }
+                        }
+
                         listingsContainer.innerHTML += `
                     <div class="col-md-4 mb-3">
                         <div class="card p-3">
-                            <h5>${product.product_name}</h5>
+                            <h5>${product.product_name} ${isDerived ? '<span class="badge bg-info">Derived</span>' : ''}</h5>
+                            <p class="small text-muted">${product.product_description || 'No description available'}</p>
                             <p><strong>Quantity:</strong> ${product.quantity} ${product.unit_name}</p>
                             <p><strong>Price:</strong> Ksh ${product.price_per_quantity} per ${product.unit_name}</p>
                             <p><strong>Status:</strong> ${product.status_name}</p>
                             <p><strong>Listed On:</strong> ${new Date(product.created_at).toLocaleDateString()}</p>
+                            ${sourceMaterialsHtml}
                             ${product.product_image_url ? `<img src="${product.product_image_url}" class="img-fluid mb-2" alt="Product Image">` : ''}
                             <div class="d-flex justify-content-between">
                                 <button class="btn btn-primary"
@@ -473,7 +522,14 @@
             modal.show();
         });
 
-        window.onload = loadUser;
+        // Add event listener for Create Derived Product button
+        document.getElementById("createDerivedBtn").addEventListener("click", function() {
+            window.location.href = "create_derived_product.php";
+        });
+
+        window.onload = async function() {
+            await loadUser();
+        };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

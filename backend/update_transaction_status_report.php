@@ -73,20 +73,32 @@ try {
 
     // Update the transaction status if it's a transaction record
     if (isset($transaction['id'])) {
-        // Define standard payment status mappings
+        // Define payment status mappings that match the enum values in the database
+        // The transactions table payment_status is an enum('pending','completed','failed','refunded')
         $paymentStatusMappings = [
-            1 => 'pending',    // Assuming ID 1 is Pending
-            2 => 'completed',  // Assuming ID 2 is Completed
-            3 => 'cancelled',  // Assuming ID 3 is Cancelled
-            4 => 'processing', // Assuming ID 4 is Processing
-            5 => 'refunded',   // Assuming ID 5 is Refunded
-            6 => 'failed'      // Assuming ID 6 is Failed
+            1 => 'pending',    // Listed/Pending
+            2 => 'completed',  // Spoken For/Completed
+            3 => 'completed',  // Paid For maps to completed
+            4 => 'completed',  // Sold maps to completed
+            5 => 'refunded',   // If status ID 5 exists and means refunded
+            6 => 'failed'      // If status ID 6 exists and means failed
         ];
 
         // Get the appropriate payment_status value based on the status ID
-        $paymentStatus = isset($paymentStatusMappings[$newStatusId])
-            ? $paymentStatusMappings[$newStatusId]
-            : strtolower(substr($status['name'], 0, 20)); // Ensure it fits in the column
+        // Ensure it's one of the valid enum values
+        $validEnumValues = ['pending', 'completed', 'failed', 'refunded'];
+
+        if (isset($paymentStatusMappings[$newStatusId])) {
+            $paymentStatus = $paymentStatusMappings[$newStatusId];
+        } else {
+            // Default to 'pending' if no valid mapping exists
+            $paymentStatus = 'pending';
+        }
+
+        // Final validation to ensure we're using a valid enum value
+        if (!in_array($paymentStatus, $validEnumValues)) {
+            $paymentStatus = 'pending'; // Default to pending if somehow we got an invalid value
+        }
 
         // Update the transaction record
         $updateTransactionQuery = "UPDATE transactions SET payment_status = ?, updated_at = NOW() WHERE id = ?";
@@ -100,10 +112,32 @@ try {
 
     // Update the purchase/listing status
     if (isset($transaction['reference_id'])) {
-        // Update the purchase record
-        $updatePurchaseQuery = "UPDATE purchases SET status_id = ?, updated_at = NOW() WHERE id = ?";
-        $updatePurchaseStmt = $conn->prepare($updatePurchaseQuery);
-        $updatePurchaseStmt->bind_param("ii", $newStatusId, $transaction['reference_id']);
+        // Check if the purchases table has a status_id column
+        $checkColumnQuery = "SHOW COLUMNS FROM purchases LIKE 'status_id'";
+        $checkColumnResult = $conn->query($checkColumnQuery);
+
+        if ($checkColumnResult->num_rows > 0) {
+            // If status_id column exists, update it
+            $updatePurchaseQuery = "UPDATE purchases SET status_id = ?, updated_at = NOW() WHERE id = ?";
+            $updatePurchaseStmt = $conn->prepare($updatePurchaseQuery);
+            $updatePurchaseStmt->bind_param("ii", $newStatusId, $transaction['reference_id']);
+        } else {
+            // If status_id column doesn't exist, use the status column (which is an enum)
+            // Map the status ID to the appropriate enum value
+            $statusMap = [
+                1 => 'pending',
+                2 => 'paid',
+                3 => 'shipped',
+                4 => 'delivered',
+                5 => 'cancelled'
+            ];
+
+            $statusValue = isset($statusMap[$newStatusId]) ? $statusMap[$newStatusId] : 'pending';
+
+            $updatePurchaseQuery = "UPDATE purchases SET status = ?, updated_at = NOW() WHERE id = ?";
+            $updatePurchaseStmt = $conn->prepare($updatePurchaseQuery);
+            $updatePurchaseStmt->bind_param("si", $statusValue, $transaction['reference_id']);
+        }
 
         if (!$updatePurchaseStmt->execute()) {
             throw new Exception("Failed to update purchase status: " . $updatePurchaseStmt->error);
@@ -124,10 +158,14 @@ try {
             $listing = $listingResult->fetch_assoc();
             $listingId = $listing['listing_id'];
 
-            // Update the product listing status
-            $updateListingQuery = "UPDATE product_listings SET status_id = ?, updated_at = NOW() WHERE id = ?";
+            // Update the product listing status ONLY for this specific transaction
+            // We need to make sure we're only updating the listing for this specific purchase
+            $updateListingQuery = "UPDATE product_listings SET status_id = ?, updated_at = NOW()
+                                  WHERE id = ? AND id IN (
+                                      SELECT listing_id FROM purchases WHERE id = ?
+                                  )";
             $updateListingStmt = $conn->prepare($updateListingQuery);
-            $updateListingStmt->bind_param("ii", $newStatusId, $listingId);
+            $updateListingStmt->bind_param("iii", $newStatusId, $listingId, $transaction['reference_id']);
 
             if (!$updateListingStmt->execute()) {
                 throw new Exception("Failed to update product listing status: " . $updateListingStmt->error);

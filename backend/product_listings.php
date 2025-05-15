@@ -8,6 +8,7 @@ ini_set('display_errors', 1);
 // Get seller_id and role_id from query parameters
 $seller_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : null;
 $role_id = isset($_GET['role_id']) ? intval($_GET['role_id']) : null;
+$buyer_id = isset($_GET['buyer_id']) ? intval($_GET['buyer_id']) : null;
 
 // Get additional filters from query parameters
 $product_id = isset($_GET['product_id']) ? intval($_GET['product_id']) : null;
@@ -21,8 +22,9 @@ $quantity_type_id = isset($_GET['quantity_type_id']) ? intval($_GET['quantity_ty
 $params = [];
 $types = "";
 
-// Base query
-$query = "SELECT pl.id, p.name AS product_name, pl.quantity, qt.unit_name, pl.price_per_quantity, pl.product_image_url,
+// Base query - removed JSON_ARRAYAGG function which is not available in MariaDB 10.4
+$query = "SELECT pl.id, p.id AS product_id, p.name AS product_name, p.description AS product_description, pl.quantity, qt.unit_name,
+                 pl.price_per_quantity, pl.product_image_url, p.is_derived,
                  u.id AS seller_id, u.name AS user_name, u.email AS user_email, u.phone AS user_phone, pl.status_id,
                  s.name AS status_name, pl.created_at, pl.updated_at, p.category_id, c.name AS category_name
           FROM product_listings pl
@@ -87,6 +89,13 @@ if ($quantity_type_id !== null) {
     $types .= "i";
 }
 
+// Prevent users from seeing their own products when they are buying
+if ($buyer_id !== null) {
+    $query .= " AND pl.seller_id != ?";
+    $params[] = $buyer_id;
+    $types .= "i";
+}
+
 $product_name = isset($_GET['filterName']) ? trim($_GET['filterName']) : null;
 
 if ($product_name !== null) {
@@ -112,6 +121,44 @@ $result = $stmt->get_result();
 
 $product_listings = [];
 while ($row = $result->fetch_assoc()) {
+    // Initialize source_materials as null
+    $row['source_materials'] = null;
+
+    // If the product is derived, fetch its source materials separately
+    if ($row['is_derived']) {
+        $sourceMaterialsQuery = "SELECT
+            pm.source_product_id,
+            sp.name AS source_product_name,
+            pm.quantity_used,
+            qt2.unit_name
+        FROM derived_products dp
+        LEFT JOIN product_materials pm ON dp.id = pm.derived_product_id
+        LEFT JOIN products sp ON pm.source_product_id = sp.id
+        LEFT JOIN quantity_types qt2 ON pm.quantity_type_id = qt2.id
+        WHERE dp.product_id = ?";
+
+        $sourceMaterialsStmt = $conn->prepare($sourceMaterialsQuery);
+        if ($sourceMaterialsStmt) {
+            $sourceMaterialsStmt->bind_param("i", $row['product_id']);
+            $sourceMaterialsStmt->execute();
+            $sourceMaterialsResult = $sourceMaterialsStmt->get_result();
+
+            $sourceMaterials = [];
+            while ($materialRow = $sourceMaterialsResult->fetch_assoc()) {
+                $sourceMaterials[] = [
+                    'source_product_id' => $materialRow['source_product_id'],
+                    'source_product_name' => $materialRow['source_product_name'],
+                    'quantity_used' => $materialRow['quantity_used'],
+                    'unit_name' => $materialRow['unit_name']
+                ];
+            }
+
+            // Convert the array to a JSON string
+            $row['source_materials'] = !empty($sourceMaterials) ? json_encode($sourceMaterials) : null;
+            $sourceMaterialsStmt->close();
+        }
+    }
+
     $product_listings[] = $row;
 }
 
